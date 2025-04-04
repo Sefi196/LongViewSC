@@ -1,0 +1,21 @@
+name: LongViewSC
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base=4.3
+  - r-shiny
+  - r-seurat
+  - r-shinyjs
+  - r-shinydashboard
+  - r-plotly
+  - r-heatmaply
+  - r-viridis
+  - bioconductor-genomicranges
+  - bioconductor-biogenerics
+  - bioconductor-iranges
+  - bioconductor-s4vectors
+  - bioconductor-genomeinfodb
+  - bioconductor-rtracklayer
+  - r-sp
