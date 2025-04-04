@@ -102,7 +102,7 @@ ui <- fluidPage(
               tags$ul(class = "dropdown-menu",
                       tags$li(HTML('<li><a href="https://biomedicalsciences.unimelb.edu.au/sbs-research-groups/anatomy-and-physiology-research/stem-cell-and-developmental-biology/clark-lab" target="_blank"><i class="fa fa-user"></i> Clark Laboratory</a></li>')),
                       tags$li(HTML('<li><a href="mailto:sefi.prawer@unimelb.edu.au" target="_blank"><i class="fa fa-question-circle"></i> sefi.prawer@unimelb.edu.au</a></li>')),
-                      tags$li(HTML('<li><a href="https://github.com/Sefi196" target="_blank"><i class="fa fa-github"></i> GitHub repo </a></li>'))
+                      tags$li(HTML('<li><a href="https://github.com/Sefi196/LongViewSC" target="_blank"><i class="fa fa-github"></i> GitHub repo </a></li>'))
                       
               )
           )
@@ -134,11 +134,26 @@ ui <- fluidPage(
               tags$ul(class = "dropdown-menu dropdown-menu-right",
                       tags$li(HTML('<li><a href="https://biomedicalsciences.unimelb.edu.au/sbs-research-groups/anatomy-and-physiology-research/stem-cell-and-developmental-biology/clark-lab" target="_blank"><i class="fa fa-user"></i> Clark Laboratory</a></li>')),
                       tags$li(HTML('<li><a href="mailto:sefi.prawer@unimelb.edu.au" target="_blank"><i class="fa fa-question-circle"></i> sefi.prawer@unimelb.edu.au</a></li>')),
-                      tags$li(HTML('<li><a href="https://github.com/Sefi196" target="_blank"><i class="fa fa-github"></i> GitHub repo </a></li>'))
+                      tags$li(HTML('<li><a href="https://github.com/Sefi196/LongViewSC" target="_blank"><i class="fa fa-github"></i> GitHub repo </a></li>'))
               )
           )
       )
   ),
+  
+  # Spinner element (hidden by default)
+  div(id = "spinner", 
+      img(src = "https://i.gifer.com/ZZ5H.gif", height = "50px", width = "50px"),
+      style = "display: none; 
+               position: fixed; 
+               bottom: 20px; 
+               left: 50%; 
+               transform: translateX(-50%); 
+               text-align: center; 
+               background-color: white; 
+               padding: 20px; 
+               border-radius: 8px; 
+               box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); 
+               z-index: 9999;"),
   
 
   div(id = "instructionsPage", style = "display: none;", 
@@ -146,7 +161,7 @@ ui <- fluidPage(
         column(12,
                # Full-width image display
                tags$img(src = "Readme_home_app.png", style = "width: 100%; height: auto; display: block;"),
-               includeMarkdown("welcome.md")
+               includeMarkdown("README.md")
         )
       )
   ),
@@ -258,8 +273,55 @@ server <- function(input, output, session) {
   })
   
 
+  # Demo Button functionality
+  observeEvent(input$DemoBtn, {
+    # Load the Seurat object from a predefined demo file
+    demo_seurat_path <- "www/Day55_tutorial_gene_and_isoform_seurat.rds"  # Update this path as necessary
+    
+    # Show spinner
+    shinyjs::show("spinner")  # Assuming you have a div with id="spinner"
+    demo_seurat_obj <- readRDS(demo_seurat_path)
+    # Hide spinner after loading data
+    
+    # Update the reactive value with the demo Seurat object
+    seurat_obj(demo_seurat_obj)
+    
+    # Dynamically update dropdown menus for reductions, assays, and features after demo Seurat object is loaded
+    observe({
+      req(seurat_obj())  # Ensure the Seurat object is available before updating UI
+      print("Updating UI based on Demo Seurat object.")  # Debugging print
+      
+      # Get available reductions, assays, and group_by
+      reductions <- names(seurat_obj()@reductions)
+      isoform_assay <- names(seurat_obj()@assays)
+      group_by <- colnames(seurat_obj()@meta.data)[!sapply(seurat_obj()@meta.data, is.numeric)]
+      
+      # Update UI elements based on the Seurat object
+      updateSelectInput(session, "reduction", choices = reductions, selected = reductions[1])
+      updateSelectInput(session, "isoform_assay", choices = isoform_assay, selected = isoform_assay[1])
+      updateSelectInput(session, "group_by", choices = group_by, selected = group_by[1])
+      updateSelectizeInput(session, "feature", choices = rownames(seurat_obj()), server = TRUE)
+    })
+      
+      gtf_path_demo <- "www/demo_isoform_annotated.gtf"  # Get the uploaded file path
+      # Import GTF file using rtracklayer
+      gtf_obj_demo <- rtracklayer::import(gtf_path_demo) %>% as_tibble()
+      print("reading in demo GTF.")  # Debugging print
+      # Update the reactive value with the new GTF object
+      gtf(gtf_obj_demo)
+    
+    # Show notification when demo data is loaded
+    showNotification("Demo data loaded successfully! Ready for analysis.", type = "message", duration = 5)
+    
+    # Show the main UI after demo data is loaded
+    shinyjs::hide("landingPage")
+    shinyjs::hide("spinner")
+    shinyjs::show("mainUI")
+  })
+  
+  
   #### Main logic ####
-  # should wrap this up in a seperate script 
+  # should wrap this up in a separate script 
   seurat_obj <- reactiveVal(NULL)
   gtf <- reactiveVal(NULL)
 
@@ -387,27 +449,37 @@ server <- function(input, output, session) {
   
   #### Isoforms ####
   output$feature_plot_iso <- renderPlot({
-    isoform_plot()})  # Updates dynamically when "number_of_isoforms" changes
+    isoform_plot()})
   
   output$dot_plot_iso <- renderPlot({
-    dotplot_isoform()})  # Updates dynamically when "number_of_isoforms" changes
+    dotplot_isoform()})
   
   #### Stack ####
   output$transcript_plot <- renderPlot({
     # Ensure the necessary data is available before proceeding
-    req(gtf(), isoform_features_to_plot)  
-    
-    # Call the plotting function with the necessary inputs
-    plot_gene_transcripts(
-      isoforms_to_plot = isoform_features_to_plot(),  # Pass the isoform features
-      gtf = gtf()  # Pass the GTF data for plotting
-    )
+    req(isoform_features_to_plot)  
+    # Check if GTF file is empty or missing
+    if (is.null(gtf()) || nrow(gtf()) == 0) {
+      # Show a modal with a custom message if the GTF is blank
+      showModal(modalDialog(
+        title = "Missing GTF File",
+        "Please provide a valid GTF to build hte isoform stack.",
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    } else {
+      # If GTF file is not blank, proceed with the plotting function
+      plot_gene_transcripts(
+        isoforms_to_plot = isoform_features_to_plot(),  # Pass the isoform features
+        gtf = gtf()  # Pass the GTF data for plotting
+      )
+    }
   })
   
   
   output$heatmap_plot <- renderPlotly({
     # Ensure necessary data is available before proceeding
-    req(gtf(), isoform_features_to_plot())
+    req(isoform_features_to_plot())
   
     # Call the plotting function with the necessary inputs
     plot_pseudobulk_heatmap(

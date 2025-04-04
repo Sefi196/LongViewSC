@@ -1,0 +1,36 @@
+Package: longread-sc-visualization
+Type: ShinyApp
+Title: A Long-read Single-cell Visualization Application
+Version: 0.1.0
+Author: Sefi Prawer
+Maintainer: Sefi Prawer <sefi.prawer@unimelb.edu.au>
+Description: This Shiny app allows users to upload Seurat objects and GTF files, and visualize gene and isoform expression in single-cell RNA-seq data.
+License: GPL-3
+Imports:
+  shiny,
+  Seurat,
+  ggplot2,
+  ggtranscript,
+  rtracklayer,
+  heatmaply,
+  tibble,
+  markdown,
+  shinyjs,
+  shinydashboard,
+  plotly,
+  dplyr,
+  tibble,
+  shinytest,
+  knitr,
+  RColorBrewer,
+  DT
+Suggests:
+  testthat,
+  devtools,
+  Rcpp
+Enhances: 
+  plotly
+VignetteBuilder: knitr
+URL: https://github.com/Sefi196/LongViewSC
+BugReports: https://github.com/Sefi196/LongViewSC/issues
+Roxygen: list(markdown = TRUE)
