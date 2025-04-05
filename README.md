@@ -1,6 +1,6 @@
 <h1 style="text-align: center;">
 
-Isoform Explorer - Welcome Guide
+LongViewSC: Interactive Visualization of Gene and Isoform Expression in Single-Cell Data
 
 </h1>
 
@@ -10,9 +10,18 @@ Isoform Explorer - Welcome Guide
 
 </h2>
 
-Isoform Explorer is a Shiny app designed to help researchers visualize isoform expression from single-cell sequencing data. This tool enables easy comparison of isoform-level expression across different conditions and clusters using heatmaps and transcript structure visualizations.
+**LongViewSC** is an interactive Shiny app designed to visualize both gene and isoform expression in Long read single-cell data. This user-friendly tool is built to provide accessible and intuitive visualization for researchers, regardless of their coding experience. This user-friendly interface allows for intuitive exploration of your data with various visualization tools such as FeaturePlots, heatmaps and transcript structure views. With these tools researchers can easily compare gene and isoform expression across different conditions, clusters and cell types.
+
+If you find this application helpful, please cite our work: {PLACEHOLDER}.
 
 <https://sefi196.github.io/FLAMESv2_LR_sc_tutorial/>
+
+## File Formats
+
+### Input Files
+
+-   **Seurat Object (.rds)**: A serialized Seurat object containing expression data, metadata, and dimensional reductions.
+-   **GTF File (.gtf)**: A gene annotation file used to map isoforms to gene symbols.
 
 ## What You Can Do
 
@@ -38,8 +47,6 @@ Isoform Explorer is a Shiny app designed to help researchers visualize isoform e
 
 💡 *Tip: Click on different isoforms to explore expression differences across clusters!*
 
-# Single Cell Isoform Expression Viewer
-
 ## Overview
 
 The Single Cell Isoform Expression Viewer is an interactive **Shiny** application designed to visualize isoform expression from single-cell RNA sequencing (scRNA-seq) data. This tool supports **Seurat objects** and allows users to explore gene and isoform-level expression patterns with a variety of plots, including feature plots, violin plots, dot plots, and pseudobulk heatmaps.
@@ -54,44 +61,40 @@ The Single Cell Isoform Expression Viewer is an interactive **Shiny** applicatio
 
 ## Installation and Requirements
 
-The application requires the following R packages:
+### **Option 1: Access LongViewSC online** (currently under development)  
+
+<https://sefi196.shinyapps.io/sc_expresstion_view/>
+
+For optimal performance, we recommend that users upload files smaller than 200MB. For those who wish to explore larger files, please refer to **Option 2** for alternative installation options.
+
+### **Option 2 : Local installation** 
+
+For users exploring large file \> 200MB or many files sequentially uploads may be slow. To ovecome this, a local intalltion is reccomeded.
+
+The application has dependencies that we have provided as a conda environment file. to install and run the app:
+
+1.  **Install conda or miniconda**
+
+2.  **Clone this repo:**
 
 ``` r
-library(shiny)
-library(Seurat)
-library(ggplot2)
-library(ggtranscript)
-library(rtracklayer)
-library(heatmaply)
-library(tibble)
-library(markdown)
-library(shinyjs)
-library(shinydashboard)
+git clone https://github.com/Sefi196/LongViewSC.git 
+cd LongViewSC
 ```
 
-To run the app, ensure these dependencies are installed using:
+3.  **Run the installing script**
 
 ``` r
-install.packages(c("shiny", "ggplot2", "heatmaply", "tibble", "markdown", "shinyjs", "shinydashboard"))
-BiocManager::install(c("Seurat", "ggtranscript", "rtracklayer"))
+cd LongViewSC
+chmod +x install.sh
+./install.sh
 ```
 
-## Running the Application
-
-Launch the app by running the following command in R:
+4.  **Launch the app by running the following command in R:**
 
 ``` r
 shiny::runApp("path/to/app")
 ```
-
-Ensure that the required source files (`plot_gene_transcripts.R` and `plot_pseudobulk_heatmap.R`) are available in the working directory.
-
-## File Formats
-
-### Input Files
-
--   **Seurat Object (.rds)**: A serialized Seurat object containing expression data, metadata, and dimensional reductions.
--   **GTF File (.gtf)**: A gene annotation file used to map isoforms to gene symbols.
 
 ### Output Interpretation
 
@@ -111,17 +114,18 @@ Ensure that the required source files (`plot_gene_transcripts.R` and `plot_pseud
 2.  **Select Parameters**
     -   Choose a gene to analyze.
     -   Select a dimensional reduction method.
-    -   Specify the isoform assay.
+    -   Specify the isoform assay. **Don't forget to do this!**
     -   Define the metadata column to group cells.
     -   Set the number of isoforms to display.
 3.  **Generate Plots**
     -   Click **GO** to visualize selected features.
 4.  **Interpret Results**
-    -   Explore expression patterns and isoform distributions.
+    -   Explore expression patterns and isoform structure
+5.  **Download your data**
 
 ## Contact and Support
 
-For further inquiries or support, please contact [**genomeprot\@outlook.com**](mailto:genomeprot@outlook.com) or visit our [Clark Laboratory website](https://biomedicalsciences.unimelb.edu.au/sbs-research-groups/anatomy-and-physiology-research/stem-cell-and-developmental-biology/clark-lab).
+For further inquiries or support, please contact sefi.prawer\@unimelb.edu.au or leave a comment on the github page
 
 ------------------------------------------------------------------------
 

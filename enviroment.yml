@@ -1,4 +1,4 @@
-name: LongViewSC
+name: LongViewSC_env
 channels:
   - conda-forge
   - bioconda
@@ -12,10 +12,12 @@ dependencies:
   - r-plotly
   - r-heatmaply
   - r-viridis
-  - bioconductor-genomicranges
-  - bioconductor-biogenerics
+  #- bioconductor-genomicranges
+  #- bioconductor-biogenerics
   - bioconductor-iranges
   - bioconductor-s4vectors
   - bioconductor-genomeinfodb
   - bioconductor-rtracklayer
   - r-sp
+  - conda-forge::r-devtools
+  - r-markdown
