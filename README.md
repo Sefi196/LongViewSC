@@ -93,8 +93,10 @@ chmod +x install.sh
 4.  **Launch the app by running the following command in R:**
 
 ``` r
-shiny::runApp("path/to/app")
+shiny::runApp("/path/to/your/ShinyApp")
 ```
+
+This will launch the app in a web browser.
 
 ### Output Interpretation
 
