@@ -36,13 +36,13 @@ server <- function(input, output, session) {
       gtf(NULL)  # Reset the Seurat object
       
       # Reset all plots when the demo data is loaded
-      output$heatmap_plot <- renderPlotly({ NULL })
-      output$feature_plot_gene <- renderPlot({ NULL })
-      output$vln_plot <- renderPlot({ NULL })
-      output$celltype_plot <- renderPlot({ NULL })
-      output$feature_plot_iso <- renderPlot({ NULL })
-      output$dot_plot_iso <- renderPlot({ NULL })
-      output$transcript_plot <- renderPlot({ NULL })
+      #output$heatmap_plot <- renderPlotly({ NULL })
+      #output$feature_plot_gene <- renderPlot({ NULL })
+      #output$vln_plot <- renderPlot({ NULL })
+      #output$celltype_plot <- renderPlot({ NULL })
+      #output$feature_plot_iso <- renderPlot({ NULL })
+      #output$dot_plot_iso <- renderPlot({ NULL })
+      #output$transcript_plot <- renderPlot({ NULL })
       
       app_state$demo_mode <- FALSE  # Reset the flag
       
