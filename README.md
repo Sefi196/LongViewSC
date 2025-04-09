@@ -14,7 +14,6 @@ LongViewSC: Interactive Visualization of Gene and Isoform Expression in Single-C
 
 ### What You Can Do
 
--   **Upload and process Seurat objects (.rds) and GTF annotation files (.gtf).**
 -   **Visualize gene expression** using feature plots and violin plots.
 -   **Explore isoform expression** at the single-cell level.
 -   **Analyze transcript structure** View exon-intron structures of selected isoforms.
@@ -47,8 +46,7 @@ LongViewSC: Interactive Visualization of Gene and Isoform Expression in Single-C
 
 -   A **Seurat Object (.rds)**: A Seurat object containing gene and isoform expression data, metadata, and dimensional reductions.
     -   The Seurat object **must contain** a gene and isoform assay.
-    -   **Isoforms** must be labeled in the following format:
-        `isoformID-geneID` (e.g., `ENST00000544301.7-VIM`).
+    -   **Isoforms** must be labeled in the following format: `isoformID-geneID` (e.g., `ENST00000544301.7-VIM`).
 -   **GTF File (.gtf)**: A gene annotation file.
 
 📌 **Note:** If you are unsure about the format of your sample files, please refer to this comprehensive tutorial on generating these files from gene and count matrices: [FLAMESv2 Long-Read Single-Cell Tutorial](https://sefi196.github.io/FLAMESv2_LR_sc_tutorial/)
@@ -69,13 +67,6 @@ For users exploring large file \> 200MB or many files sequentially. In this case
 
 Installation of conda or miniconda will depend on your system. see <https://www.anaconda.com/docs/getting-started/miniconda/install> for details.
 
-For mac users the following commands will install miniconda.
-
-``` bash
-curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh 
-bash Miniconda3-latest-MacOSX-x86_64.sh
-```
-
 2.  **Clone this repo:**
 
 ``` bash
@@ -90,17 +81,24 @@ conda env create -f environment.yml
 conda activate LongViewSC_env
 ```
 
-4.  **Run the installing script**
+4.  **Install ggtranscript in R**
 
 ``` bash
-chmod +x install.sh
-./install.sh
+R
+# Ensure devtools has been installed by runing 
+library("devtools")
+
+#if it has not been loaded install devtools and ggtranscript
+install.packages("devtools")
+devtools::install_github("dzhang32/ggtranscript")
+# exit R
+q()
 ```
 
 5.  **Launch the app by running the following command in R:**
 
 ``` r
-LongViewSC
+Rscript -e "shiny::runApp('<path_to_app.R>', launch.browser = TRUE)"
 ```
 
 This will launch the app in your default web browser.

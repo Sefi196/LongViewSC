@@ -1,0 +1,6 @@
+name: /home/yairp/anaconda3/envs
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+prefix: /home/yairp/anaconda3/envs
