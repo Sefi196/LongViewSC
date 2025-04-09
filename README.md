@@ -83,14 +83,17 @@ conda activate LongViewSC_env
 
 4.  **Install ggtranscript in R**
 
-``` bash
+``` R
+#open R
 R
 # Ensure devtools has been installed by runing 
 library("devtools")
 
-#if it has not been loaded install devtools and ggtranscript
+#If it has not been loaded install devtools
 install.packages("devtools")
+#install ggtranscript
 devtools::install_github("dzhang32/ggtranscript")
+
 # exit R
 q()
 ```
