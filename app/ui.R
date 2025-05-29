@@ -154,7 +154,7 @@ ui <- fluidPage(
   
   
   # Main UI - Initially Hidden
-  div(id = "mainUI", style = "display: none;",
+  div(id = "mainUI",
       sidebarLayout(
         sidebarPanel(width = 4,
                      class = "sidebar-panel",
@@ -167,39 +167,49 @@ ui <- fluidPage(
                          selectInput("group_by", "Select Metadata Column", choices = NULL, selected = "seurat_clusters"),
                          numericInput("number_of_isoforms", "Number of Isoforms to Plot", value = 3, min = 1, step = 1),
                          uiOutput("isoforms_warning"),
+                         numericInput("plot_width", "Plot width (inches)", value = 8, min = 4, max = 20),
+                         numericInput("plot_height", "Plot height (inches)", value = 6, min = 4, max = 20),
                          actionButton("GO", "GO", class = "btn-block btn-lg btn-success")
                      )
-        ),  
+        ),
         
         mainPanel(
-          tabsetPanel(id = "main_tabs",  # Add an ID to control tab switching
+          tabsetPanel(id = "main_tabs",
+                      
+                      # Gene Expression Tab
                       tabPanel("Gene Expression",
                                fluidRow(
                                  column(5,
                                         div(class = "plot-box",
                                             h3(class = "plot-title", "Gene Feature Plot"),
-                                            downloadButton("downloadPlot1", ""),
+                                            downloadButton("download_feature_plot_gene", "Download"),
                                             plotOutput("feature_plot_gene")
                                         )
-                                 ), 
+                                 ),
                                  column(7,
                                         div(class = "plot-box",
                                             h3(class = "plot-title", "Cell Types"),
+                                            downloadButton("download_celltype_plot", "Download"),
                                             plotOutput("celltype_plot")
                                         )
                                  ),
                                  column(12,
                                         div(class = "plot-box",
                                             h3(class = "plot-title", "Violin Plot"),
-                                            plotOutput("vln_plot")))
+                                            downloadButton("download_vln_plot", "Download"),
+                                            plotOutput("vln_plot")
+                                        )
+                                 )
                                )
                       ),
                       
+                      # Isoform Expression Tab
                       tabPanel("Isoform Expression",
                                fluidRow(
                                  column(12,
                                         div(class = "plot-box",
                                             h3(class = "plot-title", "Isoform Feature Plot"),
+                                            downloadButton("download_feature_plot_isoform", "Download"),
                                             plotOutput("feature_plot_iso")
                                         )
                                  )
@@ -208,26 +218,37 @@ ui <- fluidPage(
                                  column(12,
                                         div(class = "plot-box",
                                             h3(class = "plot-title", "Dot Plot"),
+                                            downloadButton("download_dot_plot_isoform", "Download"),
                                             plotOutput("dot_plot_iso")
                                         )
                                  )
                                )
                       ),
                       
-                      tabPanel("Isoform Transcript Structure",  
+                      # Isoform Transcript Structure Tab
+                      tabPanel("Isoform Transcript Structure",
                                fluidRow(
                                  column(12,
                                         div(class = "plot-box",
                                             h3(class = "plot-title", "Isoform Transcript Structure"),
+                                            downloadButton("download_Isoform_TranscriptStructure", "Download"),
                                             plotOutput("transcript_plot")
                                         )
-                                 ),
+                                 )
+                               ),
+                               fluidRow(
                                  column(12,
                                         div(class = "plot-box",
                                             h3(class = "plot-title", "Pseudobulk Heatmap"),
-                                            plotlyOutput("heatmap_plot")))))))))
+                                            downloadButton("download_heatmap_plot", "Download"),
+                                            plotlyOutput("heatmap_plot")
+                                        )
+                                 )
+                               )
+                      )
+                      
+          ) # end of tabsetPanel
+        ) # end of mainPanel
+      ) # end of sidebarLayout
+  ) # end of mainUI div
 )
-
-
-
-

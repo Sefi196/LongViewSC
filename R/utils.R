@@ -1,13 +1,17 @@
 # A helper to register a downloadHandler for a given reactive plot and ID
-add_download_pdf <- function(id, plot_reactive, width = 8, height = 6) {
+# Helper function
+create_plot_download_handler <- function(plot_expr, prefix, width_input, height_input) {
   downloadHandler(
     filename = function() {
-      paste0(id, "_", Sys.Date(), ".pdf")
+      paste0(prefix, "_", Sys.Date(), ".pdf")
     },
     content = function(file) {
-      pdf(file, width = width, height = height)
-      print(plot_reactive())
-      dev.off()
+      ggsave(
+        file,
+        plot = plot_expr(),
+        width = width_input(),
+        height = height_input()
+      )
     }
   )
 }

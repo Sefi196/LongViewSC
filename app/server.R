@@ -1,6 +1,9 @@
 #server side
 
 server <- function(input, output, session) {
+  ##define function for downloads 
+  
+  #### Main logic ### 
   # Hide everything except landing page initially
   shinyjs::hide("instructionsPage")
   shinyjs::hide("mainUI")
@@ -102,7 +105,7 @@ server <- function(input, output, session) {
     shinyjs::show("mainUI")
   })
   
-  #set the state of the app to control the demo mode reseting the input objects
+  #set the state of the app to control the demo mode resetting the input objects
   app_state <- reactiveValues(
     demo_mode = FALSE
   )
@@ -157,14 +160,32 @@ server <- function(input, output, session) {
   
   # Reactive expression triggered by "GO" button (updates everything)
   # Extract features related to isoforms
+  ###### Sefi note: should add in a way of making the isoforms plot based on max expression #####
   filtered_data <- eventReactive(input$GO, {
     req(seurat_obj(), input$feature)
     
     assay_name <- input$isoform_assay
     isoform_features <-rownames(seurat_obj()@assays[[assay_name]]@features)
     
-    matching_features <- grep(paste0("(^|-|\\b)", input$feature, "($|\\b)"), isoform_features, value = TRUE)
+    # Access the data matrix for the 'iso' assay
+    expression_matrix <- GetAssayData(seurat_obj(), assay = assay_name, slot = "data")
     
+    ## match features 
+    matching_features <- grep(paste0("(^|-|\\b)", input$feature, "($|\\b)"), isoform_features, value = TRUE) # features matching but not based on expression 
+    
+    # Subset the expression matrix to include only the matching features
+    subset_expression <- expression_matrix[matching_features, , drop = FALSE]
+    
+    # Calculate the total expression for each matching feature
+    total_expression <- Matrix::rowSums(subset_expression)
+    
+    # Rank features by expression
+    matching_features <- names(sort(total_expression, decreasing = TRUE))
+    
+    ### check we have correct filer
+    print(data.frame(Feature = matching_features, Expression = total_expression[matching_features]))
+    
+    # generate list of plots 
     list(
       celltype_plot = DimPlot(seurat_obj(), reduction = input$reduction, group.by = input$group_by),
       feature_plot_gene = FeaturePlot(seurat_obj(), features = input$feature, reduction = input$reduction), # Gene Feature Plot
@@ -183,7 +204,7 @@ server <- function(input, output, session) {
     matching_features <- isoform_features  # Assuming you have already filtered by gene or feature
     
     # Define gene_name dynamically, assuming it's input by user
-    gene_name <- input$feature  # Adjust this to your actual input for the gene name
+    gene_name <- input$feature
     
     # Calculate the number of isoforms
     num_isoforms <- length(matching_features)
@@ -211,14 +232,22 @@ server <- function(input, output, session) {
   # Reactive function for the isoform Feature Plot
   isoform_plot <- eventReactive(input$GO,{
     req(isoform_features_to_plot())
-    FeaturePlot(seurat_obj(), features = isoform_features_to_plot(), reduction = input$reduction)
+    plots <- FeaturePlot(seurat_obj(), features = isoform_features_to_plot(), reduction = input$reduction, order = TRUE) 
+    
+    plots <- lapply(plots, function(plot) {
+      plot + theme(plot.title = element_text(size = 11))
+    })
+    
+    # Combine the adjusted plots
+    #print(class(plots))
+    wrap_plots(plots = plots, ncol = 4)
   })
   
   # Reactive function for the isoform DotPlot
   dotplot_isoform <- eventReactive(input$GO,{
     req(isoform_features_to_plot())
     DotPlot(seurat_obj(), features = isoform_features_to_plot(), assay = input$isoform_assay, group.by = input$group_by) +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels to 45 degrees
+      theme(axis.text.x = element_text(angle = 80, hjust = 1))  # Rotate x-axis labels to 45 degrees
   })
   
   
@@ -247,9 +276,11 @@ server <- function(input, output, session) {
   output$celltype_plot <- renderPlot({
     filtered_data()$celltype_plot})
   
-  #### Isoforms ####
+  #### Isoform ####
   output$feature_plot_iso <- renderPlot({
-    isoform_plot()})
+    print(class(isoform_plot()))  # should print "patchwork" or "gg" classes
+    isoform_plot()
+  })
   
   output$dot_plot_iso <- renderPlot({
     dotplot_isoform()})
@@ -280,4 +311,60 @@ server <- function(input, output, session) {
   output$heatmap_plot <- renderPlotly({
     reactive_heatmap()  # Render the heatmap when the button is pressed
   })
+
+  ### download plots #### 
+  # Gene View
+  output$download_feature_plot_gene <- create_plot_download_handler(
+    reactive({ filtered_data()$feature_plot_gene }),
+    "feature_plot_gene",
+    width_input = reactive(input$plot_width),
+    height_input = reactive(input$plot_height)
+  )
+  
+  output$download_celltype_plot <- create_plot_download_handler(
+    reactive({ filtered_data()$celltype_plot }),
+    "celltype_plot",
+    width_input = reactive(input$plot_width),
+    height_input = reactive(input$plot_height)
+  )
+  
+  output$download_vln_plot <- create_plot_download_handler(
+    reactive({ filtered_data()$vln_plot }),
+    "vln_plot",
+    width_input = reactive(input$plot_width),
+    height_input = reactive(input$plot_height)
+  )
+  
+  # Isoform View
+  output$download_feature_plot_isoform <- create_plot_download_handler(
+    reactive({ isoform_plot() }),
+    "feature_plot_isoform",
+    width_input = reactive(input$plot_width),
+    height_input = reactive(input$plot_height)
+  )
+  
+  #  dotplot Isoforms
+  output$download_dot_plot_isoform <- create_plot_download_handler(
+    dotplot_isoform,  # Don't wrap in reactive()
+    "dot_plot_isoform",
+    width_input = reactive(input$plot_width),
+    height_input = reactive(input$plot_height)
+  )
+  
+  #stack
+  output$download_Isoform_TranscriptStructure <- create_plot_download_handler(
+    reactive({
+      req(gtf(), isoform_features_to_plot())  # Ensure dependencies are ready
+      plot_gene_transcripts(
+        isoforms_to_plot = isoform_features_to_plot(),
+        gtf = gtf()
+      )
+    }),
+    "plot_gene_transcripts",
+    width_input = reactive(input$plot_width),
+    height_input = reactive(input$plot_height)  
+  )
+
+  
+  
 }

@@ -83,7 +83,7 @@ conda activate LongViewSC_env
 
 4.  **Install ggtranscript in R**
 
-``` R
+``` r
 #open R
 R
 # Ensure devtools has been installed by runing 

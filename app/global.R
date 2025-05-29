@@ -10,10 +10,11 @@ suppressPackageStartupMessages({
   library(markdown)
   library(shinyjs)
   library(shinydashboard)
+  library(patchwork) 
   })
 })
 
-options(shiny.maxRequestSize = 2000 * 1024^2)  # Increases limit to 20GB
+options(shiny.maxRequestSize = 5000 * 1024^2)  # Increases limit to 20GB
 
 source("R/plot_gene_transcripts.R")
 source("R/plot_pseudobulk_heatmap.R")
