@@ -168,7 +168,8 @@ server <- function(input, output, session) {
     isoform_features <-rownames(seurat_obj()@assays[[assay_name]]@features)
     
     # Access the data matrix for the 'iso' assay
-    expression_matrix <- GetAssayData(seurat_obj(), assay = assay_name, slot = "data")
+    seu_joined <- JoinLayers(seurat_obj())
+    expression_matrix <- GetAssayData(seu_joined, assay = assay_name, slot = "data")
     
     ## match features 
     matching_features <- grep(paste0("(^|-|\\b)", input$feature, "($|\\b)"), isoform_features, value = TRUE) # features matching but not based on expression 
