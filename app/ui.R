@@ -156,21 +156,27 @@ ui <- fluidPage(
   # Main UI - Initially Hidden
   div(id = "mainUI",
       sidebarLayout(
-        sidebarPanel(width = 4,
-                     class = "sidebar-panel",
-                     div(class = "sidebar-panel",
-                         fileInput("seurat_file", "Upload Seurat Object (.rds)", accept = ".rds"),
-                         fileInput("gtf", "Upload gtf (.gtf)", accept = ".gtf"),
-                         selectizeInput("feature", "Select a Gene:", choices = NULL, options = list(placeholder = "Start typing...", maxOptions = 1000)),  
-                         selectInput("reduction", "Select Reduction Type", choices = NULL),
-                         selectInput("isoform_assay", "Select Isoform Assay", choices = NULL, selected = "iso"),
-                         selectInput("group_by", "Select Metadata Column", choices = NULL, selected = "seurat_clusters"),
-                         numericInput("number_of_isoforms", "Number of Isoforms to Plot", value = 4, min = 1, step = 1),
-                         uiOutput("isoforms_warning"),
-                         actionButton("GO", "GO", class = "btn-block btn-lg btn-success")
-                     )
+        sidebarPanel(
+          width = 4,
+          class = "sidebar-panel",
+          
+          # (1) File uploads stay OUTSIDE the resettable form:
+          fileInput("seurat_file", "Upload Seurat Object (.rds)", accept = ".rds"),
+          fileInput("gtf",         "Upload GTF (.gtf)",            accept = ".gtf"),
+          
+          # (2) EVERYTHING below goes inside the resettable “analysisForm”:
+          div(id = "analysisForm",
+              selectizeInput("feature", "Select a Gene:", choices = NULL, options  = list(placeholder = "Start typing…", maxOptions = 3000)),
+              selectInput("reduction",     "Select Reduction Type",  choices = NULL),
+              selectInput("isoform_assay", "Select Isoform Assay",   choices = NULL),
+              selectInput("group_by",      "Select Metadata Column", choices = NULL),
+              numericInput("number_of_isoforms", "Number of Isoforms to Plot", value = 4, min = 1, step = 1),
+              uiOutput("isoforms_warning"),
+              actionButton("GO", "GO", class = "btn-block btn-lg btn-success"),
+              actionButton("resetBtn", "Clear All", icon = icon("refresh"), class = "btn btn-warning btn-block")
+          )  # end of analysisForm
         ),
-        
+    
         mainPanel(
           tabsetPanel(id = "main_tabs",
                       

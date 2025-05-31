@@ -32,14 +32,14 @@ downloadModalServer <- function(id, plot_expr, prefix) {
     # Download handlers
     output[[paste0("download_", id, "_pdf")]] <- downloadHandler(
       filename = function() paste0(prefix, "_", Sys.Date(), ".pdf"),
-      content = function(file) {
+      content = function(file) {  
         ggsave(file, plot = plot_expr(), width = input[[paste0("width_", id)]], height = input[[paste0("height_", id)]], device = "pdf")
       }
     )
     
     output[[paste0("download_", id, "_png")]] <- downloadHandler(
       filename = function() paste0(prefix, "_", Sys.Date(), ".png"),
-      content = function(file) {
+      content = function(file) {  
         ggsave(file, plot = plot_expr(), width = input[[paste0("width_", id)]], height = input[[paste0("height_", id)]], device = "png", dpi = 300)
       }
     )
@@ -53,14 +53,14 @@ downloadModalServer <- function(id, plot_expr, prefix) {
     
     output[[paste0("download_", id, "_jpeg")]] <- downloadHandler(
       filename = function() paste0(prefix, "_", Sys.Date(), ".jpeg"),
-      content = function(file) {
+      content = function(file) {  
         ggsave(file, plot = plot_expr(), width = input[[paste0("width_", id)]], height = input[[paste0("height_", id)]], device = "jpeg", dpi = 300)
       }
     )
   })
 }
 
-#owanload handert fo heatmaply pltos
+#download for heatmaply plots
 downloadPlotlyModalServer <- function(id, plot_expr, prefix) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -81,9 +81,10 @@ downloadPlotlyModalServer <- function(id, plot_expr, prefix) {
     
     output[[paste0("download_", id, "_html")]] <- downloadHandler(
       filename = function() paste0(prefix, "_", Sys.Date(), ".html"),
-      content = function(file) {
+      content = function(file) {  
         htmlwidgets::saveWidget(plot_expr(), file = file, selfcontained = TRUE)
       }
     )
   })
 }
+

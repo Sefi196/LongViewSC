@@ -1,8 +1,16 @@
 #server side
 
 server <- function(input, output, session) {
-  #helper fucntion for dyanmic seletcion of assay options 
+  #helper function for dyanmic seletcion of assay options 
   `%||%` <- function(a, b) if (!is.null(a)) a else b
+  
+  #code for GPT helping with reset fucntionalltiy of back button 
+  # 1) Keep track of “last reset” so that plots only
+  #    render when input$GO > lastReset()
+  # -----------------------------------------------
+  
+  lastReset <- reactiveVal(0)
+  
   
   #### Main logic ### 
   # Hide everything except landing page initially
@@ -14,6 +22,9 @@ server <- function(input, output, session) {
     shinyjs::hide("landingPage")
     shinyjs::hide("instructionsPage")  # Ensure instructions page is hidden
     shinyjs::show("mainUI")
+    shinyjs::show("seurat_file")
+    shinyjs::show("gtf")
+    shinyjs::show("resetBtn")
   })
   
   # When the mailbox button is clicked, show/hide the dropdown menu
@@ -29,49 +40,61 @@ server <- function(input, output, session) {
   })
   
   # Add functionality for back button from instructions to landing page
+  # Back button logic (conditional on demo_mode)
   observeEvent(input$backToLanding, {
-    shinyjs::hide("instructionsPage")
-    shinyjs::hide("mainUI")  # Ensure main UI is hidden
+    # Always hide the mainUI and show the landing page
+    shinyjs::hide("mainUI")
     shinyjs::show("landingPage")
+    shinyjs::hide("instructionsPage")
     
-    # If in demo mode, reset the Seurat object and UI
+    # If we are in demo_mode, then drop demo data and reset everything
     if (app_state$demo_mode) {
-      seurat_obj(NULL)  # Reset the Seurat object
-      gtf(NULL)  # Reset the Seurat object
+      # 1) Clear the stored Seurat + GTF
+      seurat_obj(NULL)
+      gtf(NULL)
+      app_state$demo_mode <- FALSE
       
-      # Reset all plots when the demo data is loaded
-      #output$heatmap_plot <- renderPlotly({ NULL })
-      #output$feature_plot_gene <- renderPlot({ NULL })
-      #output$vln_plot <- renderPlot({ NULL })
-      #output$celltype_plot <- renderPlot({ NULL })
-      #output$feature_plot_iso <- renderPlot({ NULL })
-      #output$dot_plot_iso <- renderPlot({ NULL })
-      #output$transcript_plot <- renderPlot({ NULL })
+      # 2) Reset all the form inputs (so that feature/selectInput/etc. go blank)
+      shinyjs::reset("analysisForm")
       
-      app_state$demo_mode <- FALSE  # Reset the flag
+      # 3) Remove any warning message
+      output$isoforms_warning <- renderUI({ NULL })
       
-      # clear UI inputs
-      updateSelectInput(session, "reduction", choices = character(0))
-      updateSelectInput(session, "isoform_assay", choices = character(0))
-      updateSelectInput(session, "group_by", choices = character(0))
-      updateSelectizeInput(session, "feature", choices = NULL, options = list(placeholder = "Start typing...", maxOptions = 1000))
+      # 4) Force‐blank every plot by bumping lastReset()
+      lastReset(input$GO)
     }
+  })
+  
+  
+  
+  observeEvent(input$resetBtn, {
+    # 1) Record the current GO count so that all existing plots disappear
+    lastReset(input$GO)
+    
+    # 2) Clear every selector inside #analysisForm
+    shinyjs::reset("analysisForm")
+    
+    # 3) Clear any custom warning
+    output$isoforms_warning <- renderUI({ NULL })
+    
+    shinyjs::reset("seurat_file")
+    shinyjs::reset("gtf")
   })
   
   # Demo Button functionality
   observeEvent(input$DemoBtn, {
     app_state$demo_mode <- TRUE  # <--- Track that demo data was loaded
     
-    # Load the Seurat object from a predefined demo file
-    demo_seurat_path <- "demo_data/Day55_tutorial_gene_and_isoform_seurat.rds"  # Update this path as necessary
+    shinyjs::hide("seurat_file")
+    shinyjs::hide("gtf")
+    shinyjs::hide("resetBtn")
     
     # Show spinner
     shinyjs::show("spinner")  # Assuming you have a div with id="spinner"
-    demo_seurat_obj <- readRDS(demo_seurat_path)
     # Hide spinner after loading data
     
     # Update the reactive value with the demo Seurat object
-    seurat_obj(demo_seurat_obj)
+    seurat_obj(seurat_obj_demo)
     
     # Dynamically update dropdown menus for reductions, assays, and features after demo Seurat object is loaded
     observe({
@@ -95,10 +118,6 @@ server <- function(input, output, session) {
       updateSelectizeInput(session, "feature", choices = rownames(seurat_obj()), server = TRUE)
     })
     
-    gtf_path_demo <- "demo_data/demo_isoform_annotated.gtf"  # Get the uploaded file path
-    # Import GTF file using rtracklayer
-    gtf_obj_demo <- rtracklayer::import(gtf_path_demo) %>% as_tibble()
-    print("reading in demo GTF.")  # Debugging print
     # Update the reactive value with the new GTF object
     gtf(gtf_obj_demo)
     
@@ -126,6 +145,8 @@ server <- function(input, output, session) {
     req(input$seurat_file)  # Ensure a file is uploaded
     obj <- readRDS(input$seurat_file$datapath)  # Load the Seurat object
     
+    #set app status 
+    app_state$demo_mode <- FALSE
     # Update the reactive value with the new Seurat object
     seurat_obj(obj)
     
@@ -174,175 +195,224 @@ server <- function(input, output, session) {
     
     # Update the reactive value with the new GTF object
     gtf(gtf_obj)
+    
+    #set app status
+    app_state$demo_mode <- FALSE
   })
   
   
   # Reactive expression triggered by "GO" button (updates everything)
   # Extract features related to isoforms
-  ###### Sefi note: should add in a way of making the isoforms plot based on max expression #####
+  # NEW: reactive version—auto‐invalidates when input$feature or input$GO is missing
   filtered_data <- eventReactive(input$GO, {
     req(seurat_obj(), input$feature)
     
-    assay_name <- input$isoform_assay
-    isoform_features <-rownames(seurat_obj()@assays[[assay_name]]@features)
+    assay_name     <- input$isoform_assay
+    isoform_feats  <- rownames(seurat_obj()@assays[[assay_name]]@features)
+    joined         <- JoinLayers(seurat_obj())
+    expr_matrix    <- GetAssayData(joined, assay = assay_name, slot = "data")
     
-    # Access the data matrix for the 'iso' assay
-    seu_joined <- JoinLayers(seurat_obj())
-    expression_matrix <- GetAssayData(seu_joined, assay = assay_name, slot = "data")
+    matching_feats <- grep(
+      paste0("(^|-|\\b)", input$feature, "($|\\b)"),
+      isoform_feats, value = TRUE
+    )
+    subset_expr    <- expr_matrix[matching_feats, , drop = FALSE]
+    total_expr     <- Matrix::rowSums(subset_expr)
+    matching_feats <- names(sort(total_expr, decreasing = TRUE))
     
-    ## match features 
-    matching_features <- grep(paste0("(^|-|\\b)", input$feature, "($|\\b)"), isoform_features, value = TRUE) # features matching but not based on expression 
-    
-    # Subset the expression matrix to include only the matching features
-    subset_expression <- expression_matrix[matching_features, , drop = FALSE]
-    
-    # Calculate the total expression for each matching feature
-    total_expression <- Matrix::rowSums(subset_expression)
-    
-    # Rank features by expression
-    matching_features <- names(sort(total_expression, decreasing = TRUE))
-    
-    ### check we have correct filer
-    print(data.frame(Feature = matching_features, Expression = total_expression[matching_features]))
-    
-    # generate list of plots 
     list(
-      celltype_plot = DimPlot(seurat_obj(), reduction = input$reduction, group.by = input$group_by),
-      feature_plot_gene = FeaturePlot(seurat_obj(), features = input$feature, reduction = input$reduction), # Gene Feature Plot
-      vln_plot = VlnPlot(seurat_obj(), features = input$feature, group.by = input$group_by),  # Gene Violin Plot
-      isoform_features = matching_features  # Store matching isoform features
+      celltype_plot     = DimPlot(seurat_obj(), reduction = input$reduction, group.by = input$group_by),
+      feature_plot_gene = FeaturePlot(seurat_obj(), features = input$feature, reduction = input$reduction),
+      vln_plot          = VlnPlot(seurat_obj(), features = input$feature, group.by = input$group_by),
+      isoform_features  = matching_feats
     )
   })
   
   # Reactive function to get the top N isoform features
   # provide warning if too many isoforms selected 
-  isoform_features_to_plot <- eventReactive(input$GO,{
-    req(filtered_data()$isoform_features, input$number_of_isoforms)
+  isoform_features_to_plot <- reactive({
+    req(filtered_data(), input$number_of_isoforms)
     
-    # Get the matching isoform features
-    isoform_features <- filtered_data()$isoform_features
-    matching_features <- isoform_features  # Assuming you have already filtered by gene or feature
+    all_isoforms <- filtered_data()$isoform_features
+    gene_name    <- input$feature
+    num_isoforms <- length(all_isoforms)
     
-    # Define gene_name dynamically, assuming it's input by user
-    gene_name <- input$feature
-    
-    # Calculate the number of isoforms
-    num_isoforms <- length(matching_features)
-    
-    # Check if the requested number of isoforms exceeds the available matching isoforms
     if (input$number_of_isoforms > num_isoforms) {
-      # Create the dynamic message
-      message <- paste(gene_name, "has", num_isoforms, "isoforms.")
-      
-      # Display the warning message in the sidebar
+      msg <- paste(gene_name, "has", num_isoforms, "isoforms.")
       output$isoforms_warning <- renderUI({
-        HTML(paste("<p style='color:red;font-size:20px; text-align:center;'>", message, "</p>"))
+        HTML(
+          paste0(
+            "<p style='color:red; font-size:20px; text-align:center;'>",
+            msg,
+            "</p>"
+          )
+        )
       })
     } else {
-      # Clear the warning message if the condition is not met
-      output$isoforms_warning <- renderUI({
-        NULL
-      })
+      output$isoforms_warning <- renderUI({ NULL })
     }
     
-    # Return the top N isoform features to plot
-    head(matching_features, input$number_of_isoforms)
+    head(all_isoforms, input$number_of_isoforms)
   })
   
   # Reactive function for the isoform Feature Plot
-  isoform_plot <- eventReactive(input$GO,{
-    req(isoform_features_to_plot())
-    plots <- FeaturePlot(seurat_obj(), features = isoform_features_to_plot(), reduction = input$reduction, order = TRUE) 
-    
-    plots <- lapply(plots, function(plot) {
-      plot + theme(plot.title = element_text(size = 11))
-    })
-    
-    # Combine the adjusted plots
-    #print(class(plots))
+  isoform_plot <- reactive({
+    req(isoform_features_to_plot())   # auto‐invalidates if isoform_features_to_plot() is NULL
+    plots <- FeaturePlot(
+      seurat_obj(),
+      features  = isoform_features_to_plot(),
+      reduction = input$reduction,
+      order     = TRUE
+    )
+    plots <- lapply(plots, function(pl) pl + theme(plot.title = element_text(size = 11)))
     wrap_plots(plots = plots, ncol = 4)
   })
   
-  # Reactive function for the isoform DotPlot
-  dotplot_isoform <- eventReactive(input$GO,{
+  dotplot_isoform <- reactive({
     req(isoform_features_to_plot())
-    DotPlot(seurat_obj(), features = isoform_features_to_plot(), assay = input$isoform_assay, group.by = input$group_by) +
-      theme(axis.text.x = element_text(angle = 80, hjust = 1))  # Rotate x-axis labels to 45 degrees
+    DotPlot(
+      seurat_obj(),
+      features = isoform_features_to_plot(),
+      assay    = input$isoform_assay,
+      group.by = input$group_by
+    ) + theme(axis.text.x = element_text(angle = 80, hjust = 1))
   })
   
   
   # Reactive expression to trigger the heatmap plot when the button is clicked
-  reactive_heatmap <- eventReactive(input$GO, {
-    # Ensure necessary data is available before proceeding
+  reactive_heatmap <- reactive({
     req(isoform_features_to_plot())
-    
-    # Call the plotting function with the necessary inputs
     plot_pseudobulk_heatmap(
-      seurat_obj = seurat_obj(), 
-      group.by = input$group_by, 
+      seurat_obj       = seurat_obj(),
+      group.by         = input$group_by,
       isoforms_to_plot = isoform_features_to_plot(),
-      isoform_assay = input$isoform_assay
+      isoform_assay    = input$isoform_assay
     )
   })
   
-  # Render the main plots
-  #### Genes ####
+  #### Render the main plots (with the new req) ####
+  
+  # Gene Feature Plot
   output$feature_plot_gene <- renderPlot({
-    filtered_data()$feature_plot })
+    req(input$GO > lastReset(), filtered_data())
+    filtered_data()$feature_plot
+  })
   
+  # Violin Plot
   output$vln_plot <- renderPlot({
-    filtered_data()$vln_plot})
+    req(input$GO > lastReset(), filtered_data())
+    filtered_data()$vln_plot
+  })
   
+  # Cell Type DimPlot
   output$celltype_plot <- renderPlot({
-    filtered_data()$celltype_plot})
+    req(input$GO > lastReset(), filtered_data())
+    filtered_data()$celltype_plot
+  })
   
-  #### Isoform ####
+  # Isoform Feature Plot
   output$feature_plot_iso <- renderPlot({
-    print(class(isoform_plot()))  # should print "patchwork" or "gg" classes
+    req(input$GO > lastReset(), isoform_plot())
     isoform_plot()
   })
   
+  # Dot Plot for Isoforms
   output$dot_plot_iso <- renderPlot({
-    print(class(isoform_plot()))  # should print "patchwork" or "gg" classes
-    dotplot_isoform()})
+    req(input$GO > lastReset(), dotplot_isoform())
+    dotplot_isoform()
+  })
   
-  #### Stack 
+  # Transcript Structure (from GTF)
   output$transcript_plot <- renderPlot({
-    # Ensure the necessary data is available before proceeding
-    req(isoform_features_to_plot)  
-    # Check if GTF file is empty or missing
+    req(input$GO > lastReset(), gtf(), isoform_features_to_plot())
     if (is.null(gtf()) || nrow(gtf()) == 0) {
-      # Show a modal with a custom message if the GTF is blank
       showModal(modalDialog(
         title = "Missing GTF File",
-        "Please provide a valid GTF to build hte isoform stack.",
+        "Please provide a valid GTF to build the isoform stack.",
         easyClose = TRUE,
-        footer = NULL
+        footer    = NULL
       ))
     } else {
-      # If GTF file is not blank, proceed with the plotting function
       plot_gene_transcripts(
-        isoforms_to_plot = isoform_features_to_plot(),  # Pass the isoform features
-        gtf = gtf()  # Pass the GTF data for plotting
+        isoforms_to_plot = isoform_features_to_plot(),
+        gtf              = gtf()
       )
     }
   })
   
-  # Render the heatmap plot when the button is clicked
+  # Pseudobulk Heatmap (Plotly)
   output$heatmap_plot <- renderPlotly({
-    reactive_heatmap()  # Render the heatmap when the button is pressed
+    req(input$GO > lastReset(), reactive_heatmap())
+    reactive_heatmap()
   })
+  
 
-  #### download plots ###
-  downloadModalServer("celltype_plot", reactive({ filtered_data()$celltype_plot }), "Cell type_plot")
-  downloadModalServer("feature_plot_gene", reactive({filtered_data()$feature_plot_gene}), prefix = "Feature plot - Gene")
-  downloadModalServer("vln_plot", reactive({ filtered_data()$vln_plot }), "Violin plot")
-  downloadModalServer("feature_plot_isoform", reactive({ isoform_plot() }), "Feature plot - Isoform")
-  downloadModalServer("dot_plot_isoform", reactive({ dotplot_isoform() }), "Dot plot - Isoform")
-  downloadModalServer("Isoform_TranscriptStructure", reactive({
-    req(gtf(), isoform_features_to_plot())
-    plot_gene_transcripts(isoforms_to_plot = isoform_features_to_plot(), gtf = gtf())
-  }), "Transcript Structure")
-  downloadPlotlyModalServer("pseudobulk_heatmap", reactive({ reactive_heatmap() }), "Pseudobulk heatmap")
+  # —— download handlers must be guarded ——  
+  
+  downloadModalServer(
+    "celltype_plot",
+    reactive({
+      req(req(input$GO > lastReset()))
+      filtered_data()$celltype_plot
+    }),
+    "Cell type_plot"
+  )
+  
+  downloadModalServer(
+    "feature_plot_gene",
+    reactive({
+      req(req(input$GO > lastReset()))
+      filtered_data()$feature_plot
+    }),
+    "Feature plot - Gene"
+  )
+  
+  downloadModalServer(
+    "vln_plot",
+    reactive({
+      req(req(input$GO > lastReset()))
+      filtered_data()$vln_plot
+    }),
+    "Violin plot"
+  )
+  
+  downloadModalServer(
+    "feature_plot_isoform",
+    reactive({
+      req(req(input$GO > lastReset()))
+      isoform_plot()
+    }),
+    "Feature plot - Isoform"
+  )
+  
+  downloadModalServer(
+    "dot_plot_isoform",
+    reactive({
+      req(req(input$GO > lastReset()))
+      dotplot_isoform()
+    }),
+    "Dot plot - Isoform"
+  )
+  
+  downloadModalServer(
+    "Isoform_TranscriptStructure",
+    reactive({
+      req(req(input$GO > lastReset()))
+      plot_gene_transcripts(
+        isoforms_to_plot = isoform_features_to_plot(),
+        gtf = gtf()
+      )
+    }),
+    "Transcript Structure"
+  )
+  
+  downloadPlotlyModalServer(
+    "pseudobulk_heatmap",
+    reactive({
+      req(req(input$GO > lastReset()))
+      reactive_heatmap()
+    }),
+    "Pseudobulk heatmap"
+  )
   
 }
