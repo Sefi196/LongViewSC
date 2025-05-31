@@ -1,7 +1,8 @@
 #server side
 
 server <- function(input, output, session) {
-  ##define function for downloads 
+  #helper fucntion for dyanmic seletcion of assay options 
+  `%||%` <- function(a, b) if (!is.null(a)) a else b
   
   #### Main logic ### 
   # Hide everything except landing page initially
@@ -82,10 +83,15 @@ server <- function(input, output, session) {
       isoform_assay <- names(seurat_obj()@assays)
       group_by <- colnames(seurat_obj()@meta.data)[!sapply(seurat_obj()@meta.data, is.numeric)]
       
-      # Update UI elements based on the Seurat object
-      updateSelectInput(session, "reduction", choices = reductions, selected = reductions[1])
-      updateSelectInput(session, "isoform_assay", choices = isoform_assay, selected = isoform_assay[1])
-      updateSelectInput(session, "group_by", choices = group_by, selected = group_by[1])
+      # Logic to select defaults
+      default_isoform_assay <- isoform_assay[grepl("^iso(form)?$", isoform_assay, ignore.case = TRUE)][1]
+      default_group_by <- group_by[grepl("seurat_clusters|cell.*type|annotation", group_by, ignore.case = TRUE)][1]
+      default_reduction <- reductions[grepl("umap|tsne|iso", reductions, ignore.case = TRUE)][1]
+      
+      # Update UI elements
+      updateSelectInput(session, "reduction", choices = reductions, selected = default_reduction %||% reductions[1])
+      updateSelectInput(session, "isoform_assay", choices = isoform_assay, selected = default_isoform_assay %||% isoform_assay[1])
+      updateSelectInput(session, "group_by", choices = group_by, selected = default_group_by %||% group_by[1])
       updateSelectizeInput(session, "feature", choices = rownames(seurat_obj()), server = TRUE)
     })
     
@@ -137,11 +143,24 @@ server <- function(input, output, session) {
       print(paste("Isoform assays available:", paste(isoform_assay, collapse = ", ")))
       print(paste("Group_by columns:", paste(group_by, collapse = ", ")))
       
-      # Update UI elements based on the Seurat object
-      updateSelectInput(session, "reduction", choices = reductions, selected = reductions[1])
-      updateSelectInput(session, "isoform_assay", choices = isoform_assay, selected = isoform_assay[1])
-      updateSelectInput(session, "group_by", choices = group_by, selected = group_by[1])
+      # Logic to select defaults
+      default_isoform_assay <- isoform_assay[grepl("^iso(form)?$", isoform_assay, ignore.case = TRUE)][1]
+      default_group_by <- group_by[grepl("seurat_clusters|cell.*type|annotation", group_by, ignore.case = TRUE)][1]
+      default_reduction <- reductions[grepl("umap|tsne|iso", reductions, ignore.case = TRUE)][1]
+      
+      # Update UI elements
+      updateSelectInput(session, "reduction", choices = reductions, selected = default_reduction %||% reductions[1])
+      updateSelectInput(session, "isoform_assay", choices = isoform_assay, selected = default_isoform_assay %||% isoform_assay[1])
+      updateSelectInput(session, "group_by", choices = group_by, selected = default_group_by %||% group_by[1])
       updateSelectizeInput(session, "feature", choices = rownames(seurat_obj()), server = TRUE)
+      
+      if (!is.null(default_isoform_assay)) {
+        showNotification(paste("Auto-selected assay:", default_isoform_assay), type = "message", duration = 4)
+      }
+      
+      if (!is.null(default_group_by)) {
+        showNotification(paste("Auto-selected metadata column:", default_group_by), type = "message", duration = 4)
+      }
     })
   })
   
@@ -284,6 +303,7 @@ server <- function(input, output, session) {
   })
   
   output$dot_plot_iso <- renderPlot({
+    print(class(isoform_plot()))  # should print "patchwork" or "gg" classes
     dotplot_isoform()})
   
   #### Stack 
@@ -313,59 +333,16 @@ server <- function(input, output, session) {
     reactive_heatmap()  # Render the heatmap when the button is pressed
   })
 
-  ### download plots #### 
-  # Gene View
-  output$download_feature_plot_gene <- create_plot_download_handler(
-    reactive({ filtered_data()$feature_plot_gene }),
-    "feature_plot_gene",
-    width_input = reactive(input$plot_width),
-    height_input = reactive(input$plot_height)
-  )
-  
-  output$download_celltype_plot <- create_plot_download_handler(
-    reactive({ filtered_data()$celltype_plot }),
-    "celltype_plot",
-    width_input = reactive(input$plot_width),
-    height_input = reactive(input$plot_height)
-  )
-  
-  output$download_vln_plot <- create_plot_download_handler(
-    reactive({ filtered_data()$vln_plot }),
-    "vln_plot",
-    width_input = reactive(input$plot_width),
-    height_input = reactive(input$plot_height)
-  )
-  
-  # Isoform View
-  output$download_feature_plot_isoform <- create_plot_download_handler(
-    reactive({ isoform_plot() }),
-    "feature_plot_isoform",
-    width_input = reactive(input$plot_width),
-    height_input = reactive(input$plot_height)
-  )
-  
-  #  dotplot Isoforms
-  output$download_dot_plot_isoform <- create_plot_download_handler(
-    dotplot_isoform,  # Don't wrap in reactive()
-    "dot_plot_isoform",
-    width_input = reactive(input$plot_width),
-    height_input = reactive(input$plot_height)
-  )
-  
-  #stack
-  output$download_Isoform_TranscriptStructure <- create_plot_download_handler(
-    reactive({
-      req(gtf(), isoform_features_to_plot())  # Ensure dependencies are ready
-      plot_gene_transcripts(
-        isoforms_to_plot = isoform_features_to_plot(),
-        gtf = gtf()
-      )
-    }),
-    "plot_gene_transcripts",
-    width_input = reactive(input$plot_width),
-    height_input = reactive(input$plot_height)  
-  )
-
-  
+  #### download plots ###
+  downloadModalServer("celltype_plot", reactive({ filtered_data()$celltype_plot }), "Cell type_plot")
+  downloadModalServer("feature_plot_gene", reactive({filtered_data()$feature_plot_gene}), prefix = "Feature plot - Gene")
+  downloadModalServer("vln_plot", reactive({ filtered_data()$vln_plot }), "Violin plot")
+  downloadModalServer("feature_plot_isoform", reactive({ isoform_plot() }), "Feature plot - Isoform")
+  downloadModalServer("dot_plot_isoform", reactive({ dotplot_isoform() }), "Dot plot - Isoform")
+  downloadModalServer("Isoform_TranscriptStructure", reactive({
+    req(gtf(), isoform_features_to_plot())
+    plot_gene_transcripts(isoforms_to_plot = isoform_features_to_plot(), gtf = gtf())
+  }), "Transcript Structure")
+  downloadPlotlyModalServer("pseudobulk_heatmap", reactive({ reactive_heatmap() }), "Pseudobulk heatmap")
   
 }

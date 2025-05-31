@@ -163,12 +163,10 @@ ui <- fluidPage(
                          fileInput("gtf", "Upload gtf (.gtf)", accept = ".gtf"),
                          selectizeInput("feature", "Select a Gene:", choices = NULL, options = list(placeholder = "Start typing...", maxOptions = 1000)),  
                          selectInput("reduction", "Select Reduction Type", choices = NULL),
-                         selectInput("isoform_assay", "Select Isoform Assay", choices = NULL, selected = "RNA"),
+                         selectInput("isoform_assay", "Select Isoform Assay", choices = NULL, selected = "iso"),
                          selectInput("group_by", "Select Metadata Column", choices = NULL, selected = "seurat_clusters"),
-                         numericInput("number_of_isoforms", "Number of Isoforms to Plot", value = 3, min = 1, step = 1),
+                         numericInput("number_of_isoforms", "Number of Isoforms to Plot", value = 4, min = 1, step = 1),
                          uiOutput("isoforms_warning"),
-                         numericInput("plot_width", "Plot width (inches)", value = 8, min = 4, max = 20),
-                         numericInput("plot_height", "Plot height (inches)", value = 6, min = 4, max = 20),
                          actionButton("GO", "GO", class = "btn-block btn-lg btn-success")
                      )
         ),
@@ -182,22 +180,52 @@ ui <- fluidPage(
                                  column(5,
                                         div(class = "plot-box",
                                             h3(class = "plot-title", "Gene Feature Plot"),
-                                            downloadButton("download_feature_plot_gene", "Download"),
-                                            plotOutput("feature_plot_gene")
+                                            plotOutput("feature_plot_gene"),
+                                            div(
+                                              actionButton(
+                                                inputId = "feature_plot_gene-download_feature_plot_gene",
+                                                label = "Download",
+                                                icon = icon("download"),
+                                                class = "btn btn-sm btn-link",
+                                                title = "Download Plot",
+                                                style = "font-size: 12px;"
+                                              ),
+                                              style = "text-align: right; padding-right: 10px; margin-top: 5px;"
+                                            )
                                         )
                                  ),
                                  column(7,
                                         div(class = "plot-box",
                                             h3(class = "plot-title", "Cell Types"),
-                                            downloadButton("download_celltype_plot", "Download"),
-                                            plotOutput("celltype_plot")
+                                            plotOutput("celltype_plot"),
+                                            div(
+                                              actionButton(
+                                                inputId = "celltype_plot-download_celltype_plot",
+                                                label = "Download",
+                                                icon = icon("download"),
+                                                class = "btn btn-sm btn-link",
+                                                title = "Download Plot",
+                                                style = "font-size: 12px;"
+                                              ),
+                                              style = "text-align: right; padding-right: 10px; margin-top: 5px;"
+                                            )
                                         )
                                  ),
                                  column(12,
                                         div(class = "plot-box",
                                             h3(class = "plot-title", "Violin Plot"),
-                                            downloadButton("download_vln_plot", "Download"),
-                                            plotOutput("vln_plot")
+                                            plotOutput("vln_plot"),
+                                            div(
+                                              actionButton(
+                                                inputId = "vln_plot-download_vln_plot",
+                                                label = "Download",
+                                                icon = icon("download"),
+                                                class = "btn btn-sm btn-link",
+                                                title = "Download Plot",
+                                                style = "font-size: 12px;"
+                                              ),
+                                              style = "text-align: right; padding-right: 10px; margin-top: 5px;"
+                                            )
                                         )
                                  )
                                )
@@ -209,8 +237,18 @@ ui <- fluidPage(
                                  column(12,
                                         div(class = "plot-box",
                                             h3(class = "plot-title", "Isoform Feature Plot"),
-                                            downloadButton("download_feature_plot_isoform", "Download"),
-                                            plotOutput("feature_plot_iso")
+                                            plotOutput("feature_plot_iso"),
+                                            div(
+                                              actionButton(
+                                                inputId = "feature_plot_isoform-download_feature_plot_isoform",
+                                                label = "Download",
+                                                icon = icon("download"),
+                                                class = "btn btn-sm btn-link",
+                                                title = "Download Plot",
+                                                style = "font-size: 12px;"
+                                              ),
+                                              style = "text-align: right; padding-right: 10px; margin-top: 5px;"
+                                            )
                                         )
                                  )
                                ),
@@ -218,12 +256,21 @@ ui <- fluidPage(
                                  column(12,
                                         div(class = "plot-box",
                                             h3(class = "plot-title", "Dot Plot"),
-                                            downloadButton("download_dot_plot_isoform", "Download"),
-                                            plotOutput("dot_plot_iso")
+                                            plotOutput("dot_plot_iso"),
+                                            div(
+                                              actionButton(
+                                                inputId = "dot_plot_isoform-download_dot_plot_isoform",
+                                                label = "Download",
+                                                icon = icon("download"),
+                                                class = "btn btn-sm btn-link",
+                                                title = "Download Plot",
+                                                style = "font-size: 12px;"
+                                              ),
+                                              style = "text-align: right; padding-right: 10px; margin-top: 5px;"
+                                            ))
                                         )
                                  )
-                               )
-                      ),
+                               ),
                       
                       # Isoform Transcript Structure Tab
                       tabPanel("Isoform Transcript Structure",
@@ -231,8 +278,18 @@ ui <- fluidPage(
                                  column(12,
                                         div(class = "plot-box",
                                             h3(class = "plot-title", "Isoform Transcript Structure"),
-                                            downloadButton("download_Isoform_TranscriptStructure", "Download"),
-                                            plotOutput("transcript_plot")
+                                            plotOutput("transcript_plot"),
+                                            div(
+                                              actionButton(
+                                                inputId = "Isoform_TranscriptStructure-download_Isoform_TranscriptStructure",
+                                                label = "Download",
+                                                icon = icon("download"),
+                                                class = "btn btn-sm btn-link",
+                                                title = "Download Plot",
+                                                style = "font-size: 12px;"
+                                              ),
+                                              style = "text-align: right; padding-right: 10px; margin-top: 5px;"
+                                            )
                                         )
                                  )
                                ),
@@ -240,12 +297,23 @@ ui <- fluidPage(
                                  column(12,
                                         div(class = "plot-box",
                                             h3(class = "plot-title", "Pseudobulk Heatmap"),
-                                            downloadButton("download_heatmap_plot", "Download"),
-                                            plotlyOutput("heatmap_plot")
+                                            #downloadButton("download_heatmap_plot", "Download"),
+                                            plotlyOutput("heatmap_plot"),
+                                            div(
+                                              actionButton(
+                                                inputId = "pseudobulk_heatmap-download_pseudobulk_heatmap",
+                                                label = "Download",
+                                                icon = icon("download"),
+                                                class = "btn btn-sm btn-link",
+                                                title = "Download Plot",
+                                                style = "font-size: 12px;"
+                                              ),
+                                              style = "text-align: right; padding-right: 10px; margin-top: 5px;"
+                                            )
                                         )
                                  )
                                )
-                      )
+                               )
                       
           ) # end of tabsetPanel
         ) # end of mainPanel
