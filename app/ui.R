@@ -7,6 +7,15 @@ ui <- fluidPage(
   # Add custom styles for a header banner and plot titles
   tags$head(
     tags$style(HTML("
+    /* Hide the blue background on a selected row—only the checkbox is visible */
+    table.dataTable tr.selected td,
+    table.dataTable td.selected {
+      background-color: transparent !important;
+    }
+    .select-checkbox {
+      text-align: center;
+      color: #444;
+    }
       .banner {
         background-color: #2c3e50; 
         color: white; 
@@ -171,7 +180,7 @@ ui <- fluidPage(
               selectInput("isoform_assay", "Select Isoform Assay",   choices = NULL),
               selectInput("group_by",      "Select Metadata Column", choices = NULL),
               numericInput("number_of_isoforms", "Number of Isoforms to Plot", value = 4, min = 1, step = 1),
-              uiOutput("isoforms_warning"),
+              #uiOutput("isoforms_warning"),
               actionButton("GO", "GO", class = "btn-block btn-lg btn-success"),
               actionButton("resetBtn", "Clear All", icon = icon("refresh"), class = "btn btn-warning btn-block")
           )  # end of analysisForm
@@ -239,6 +248,14 @@ ui <- fluidPage(
                       
                       # Isoform Expression Tab
                       tabPanel("Isoform Expression",
+                               fluidRow(
+                                 column(12,
+                                        div(class = "plot-box",
+                                            h3(class = "plot-title", "Pick Isoform(s) to Plot"),
+                                            DT::dataTableOutput("isoform_table")
+                                        )
+                                 )
+                               ),
                                fluidRow(
                                  column(12,
                                         div(class = "plot-box",

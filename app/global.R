@@ -11,6 +11,7 @@ suppressPackageStartupMessages({
   library(shinyjs)
   library(shinydashboard)
   library(patchwork) 
+  library(DT)
   })
 })
 
