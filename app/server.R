@@ -143,6 +143,8 @@ server <- function(input, output, session) {
   # Handle Seurat object file upload
   observeEvent(input$seurat_file, {
     req(input$seurat_file)  # Ensure a file is uploaded
+    
+    shinyjs::show("spinner")
     obj <- readRDS(input$seurat_file$datapath)  # Load the Seurat object
     
     #set app status 
@@ -175,6 +177,8 @@ server <- function(input, output, session) {
       updateSelectInput(session, "group_by", choices = group_by, selected = default_group_by %||% group_by[1])
       updateSelectizeInput(session, "feature", choices = rownames(seurat_obj()), server = TRUE)
       
+      shinyjs::hide("spinner")
+      
       if (!is.null(default_isoform_assay)) {
         showNotification(paste("Auto-selected assay:", default_isoform_assay), type = "message", duration = 4)
       }
@@ -188,6 +192,7 @@ server <- function(input, output, session) {
   # Handle GTF file upload
   observeEvent(input$gtf, {
     req(input$gtf)  # Ensure a file is uploaded
+    shinyjs::show("spinner")
     gtf_path <- input$gtf$datapath  # Get the uploaded file path
     
     # Import GTF file using rtracklayer
@@ -196,6 +201,7 @@ server <- function(input, output, session) {
     # Update the reactive value with the new GTF object
     gtf(gtf_obj)
     
+    shinyjs::hide("spinner")
     #set app status
     app_state$demo_mode <- FALSE
   })
@@ -230,7 +236,7 @@ server <- function(input, output, session) {
   
   # Reactive function to get the top N isoform features
   # provide warning if too many isoforms selected 
-  isoform_features_to_plot <- reactive({
+  isoform_features_to_plot <- eventReactive(input$GO, {
     req(filtered_data(), input$number_of_isoforms)
     
     all_isoforms <- filtered_data()$isoform_features
