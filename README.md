@@ -55,7 +55,7 @@ LongViewSC: Interactive Visualization of Gene and Isoform Expression in Single-C
 
 ### **Option 1: Access LongViewSC online** (currently under development)
 
-<https://sefi196.shinyapps.io/sc_expresstion_view/](http://portal.unimelb-lrscview.cloud.edu.au:3838/LongViewSC/>
+<http://portal.unimelb-lrscview.cloud.edu.au:3838/LongViewSC/>
 
 For optimal performance, we recommend that users upload files smaller than 200MB. For those who wish to explore larger files, please refer to **Option 2** for alternative installation options.
 
