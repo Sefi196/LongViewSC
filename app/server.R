@@ -19,8 +19,16 @@ server <- function(input, output, session) {
   
   # Always reset chip selection to top 4 whenever a new gene is loaded
   observeEvent(filtered_data(), {
-    feats <- isoform_features_to_plot()
-    if (length(feats) > 0) {
+    feats <- filtered_data()$isoform_features
+    if (length(feats) == 0) return()
+    # Preserve the user's current selection if it intersects with the new
+    # feature set (same gene re-run). Only reset to top-4 if the gene changed
+    # or no previously-selected isoforms exist in the new feature set.
+    prev_sel <- rv$selected_isoform_names
+    keep     <- prev_sel[prev_sel %in% feats]
+    if (length(keep) > 0) {
+      rv$selected_isoform_names <- keep
+    } else {
       rv$selected_isoform_names <- feats[seq_len(min(4, length(feats)))]
     }
   }, ignoreInit = TRUE)
@@ -43,6 +51,7 @@ server <- function(input, output, session) {
   # Hide everything except landing page initially
   shinyjs::hide("instructionsPage")
   shinyjs::hide("mainUI")
+  shinyjs::hide("analysisForm")
   
   # When 'Start Analysis' is clicked, hide landing page and show main UI
   observeEvent(input$startBtn, {
@@ -73,53 +82,74 @@ server <- function(input, output, session) {
     shinyjs::show("landingPage")
     shinyjs::hide("instructionsPage")
     
-    # If we are in demo_mode, then drop demo data and reset everything
+    # Demo: wipe everything. Own-data: keep analysis, just go back.
     if (app_state$demo_mode) {
-      # 1) Clear the stored Seurat + GTF
       seurat_obj(NULL)
       join_and_store(NULL)
       gtf(NULL)
       app_state$demo_mode <- FALSE
-      
-      # 2) Reset all the form inputs (so that feature/selectInput/etc. go blank)
-      shinyjs::reset("analysisForm")
-      
-      # 3) Remove any warning message
-      #output$isoforms_warning <- renderUI({ NULL })
-      
-      # 4) Force‐blank every plot by bumping lastReset()
+      rv$selected_isoform_names <- character(0)
       lastReset(input$GO)
+      shinyjs::reset("analysisForm")
+      shinyjs::hide("analysisForm")
+      shinyjs::show("file_inputs_panel")
     }
   })
   
   
   
   observeEvent(input$resetBtn, {
-    lastReset(input$GO)
+    # Full clean slate: clear data, plots, chips, form
+    seurat_obj(NULL)
+    join_and_store(NULL)
+    gtf(NULL)
     rv$selected_isoform_names <- character(0)
+    lastReset(input$GO)
     shinyjs::reset("analysisForm")
+    shinyjs::hide("analysisForm")
     output$isoforms_warning <- renderUI({ NULL })
     shinyjs::reset("seurat_file")
     shinyjs::reset("gtf")
     shinyjs::show("file_inputs_panel")
+    # traj_include_ui clears automatically via lastReset guard in renderUI
   })
   
   # Demo Button functionality
   observeEvent(input$DemoBtn, {
-    app_state$demo_mode <- TRUE  # <--- Track that demo data was loaded
+    app_state$demo_mode <- TRUE
+    # Clear chips and plot state without resetting the form
+    # (reset() would undo the dropdown values set by update_seurat_ui)
+    rv$selected_isoform_names <- character(0)
+    lastReset(input$GO)
     
     shinyjs::hide("file_inputs_panel")
     shinyjs::hide("resetBtn")
+    shinyjs::show("spinner")
     
-    # Show spinner
-    shinyjs::show("spinner")  # Assuming you have a div with id="spinner"
-    # Hide spinner after loading data
-    
-    # Load demo Seurat + GTF, join layers once, then update UI
     seurat_obj(seurat_obj_demo)
     join_and_store(seurat_obj_demo)
     gtf(gtf_obj_demo)
     update_seurat_ui()
+    # server=TRUE registers choices lazily — selected= is ignored at call time.
+    # shinyjs::delay waits 300ms for the selectize widget to initialise client-side,
+    # then sends the selection. This is more reliable than onFlushed for server-mode.
+    # Delay 300ms for selectize to init, set VIM, then after another 400ms
+    # auto-click GO so the top 4 isoforms are pre-selected for the user.
+    shinyjs::delay(500, {
+      updateSelectizeInput(session, "feature", selected = "VIM")
+      shinyjs::delay(600, {
+        shinyjs::click("GO")
+        # Extra delay: if chips are still empty after GO fires
+        # (selectize may not have delivered input$feature in time),
+        # force-populate from whatever filtered_data computed.
+        shinyjs::delay(800, {
+          feats <- isolate(filtered_data()$isoform_features)
+          if (length(feats) > 0 && length(isolate(rv$selected_isoform_names)) == 0) {
+            rv$selected_isoform_names <- feats[seq_len(min(4, length(feats)))]
+          }
+        })
+      })
+    })
     
     # Show notification when demo data is loaded
     showNotification("Demo data loaded successfully! Ready for analysis.", type = "message", duration = 5)
@@ -154,12 +184,17 @@ server <- function(input, output, session) {
     seurat_joined(obj)
   }
   
+  # ── Sidebar collapse via shinyjs ─────────────────────────────────────────────
+  observeEvent(input$sidebarToggle_click, {
+    shinyjs::toggle(id = "sidebar_panel_wrap", anim = TRUE, animType = "slide", time = 0.3)
+  }, ignoreInit = TRUE)
+  
   # ── Helper: update all dropdowns after any Seurat object is loaded ──────────
   update_seurat_ui <- function() {
     req(seurat_obj())
     reductions    <- names(seurat_obj()@reductions)
     isoform_assay <- names(seurat_obj()@assays)
-    group_by      <- colnames(seurat_obj()@meta.data)[!sapply(seurat_obj()@meta.data, is.numeric)]
+    group_by      <- colnames(seurat_obj()@meta.data)[!vapply(seurat_obj()@meta.data, function(x) is.numeric(x) || is.list(x), logical(1))]
     
     default_isoform_assay <- isoform_assay[grepl("^iso(form)?$", isoform_assay, ignore.case = TRUE)][1]
     default_group_by      <- group_by[grepl("seurat_clusters|cell.*type|annotation", group_by, ignore.case = TRUE)][1]
@@ -170,6 +205,7 @@ server <- function(input, output, session) {
     updateSelectInput(session, "group_by",      choices = group_by,      selected = default_group_by      %||% group_by[1])
     
     updateSelectizeInput(session, "feature", choices = rownames(seurat_obj()), server = TRUE)
+    shinyjs::show("analysisForm")
     shinyjs::hide("spinner")
     
     if (!is.null(default_isoform_assay))
@@ -294,9 +330,10 @@ server <- function(input, output, session) {
       feature_plot_gene = FeaturePlot(seurat_joined(), features = input$feature, reduction = input$reduction),
       vln_plot          = VlnPlot(seurat_joined(), features = input$feature, group.by = input$group_by),
       isoform_features  = matching_feats,
-      expr_matrix       = expr_matrix   # <-- cached so isoform_table doesn't re-fetch
+      expr_matrix       = expr_matrix,
+      feature           = input$feature
     )
-  }, ignoreNULL = FALSE)  # <---- This makes it “fire once at launch” even though GO=0
+  }, ignoreNULL = FALSE)
   
   # Reactive function to get the top N isoform features
   #isoform_features_to_plot <- eventReactive(input$GO, {
@@ -346,12 +383,25 @@ server <- function(input, output, session) {
   #}
   #})
   
+  # Snapshot only the settings at GO press (not isoforms).
+  # isoform_plot and dotplot_isoform read selected_isoforms() live
+  # so chip toggles update them, but changing reduction/assay/group_by
+  # does not re-render until GO is pressed again.
+  iso_settings <- eventReactive(input$GO, {
+    list(
+      reduction = input$reduction,
+      assay     = input$isoform_assay,
+      group_by  = input$group_by
+    )
+  }, ignoreNULL = FALSE)
+  
   isoform_plot <- reactive({
-    req(input$GO > lastReset(), selected_isoforms(), seurat_joined())
+    req(input$GO > lastReset(), iso_settings(), seurat_joined())
+    req(length(selected_isoforms()) > 0)
     plots <- FeaturePlot(
       seurat_joined(),
       features  = selected_isoforms(),
-      reduction = input$reduction,
+      reduction = iso_settings()$reduction,
       order     = TRUE
     )
     lapply(plots, function(pl) pl + theme(plot.title = element_text(size = 11))) %>%
@@ -359,12 +409,13 @@ server <- function(input, output, session) {
   })
   
   dotplot_isoform <- reactive({
-    req(input$GO > lastReset(), selected_isoforms(), seurat_joined())
+    req(input$GO > lastReset(), iso_settings(), seurat_joined())
+    req(length(selected_isoforms()) > 0)
     DotPlot(
       seurat_joined(),
       features = selected_isoforms(),
-      assay    = input$isoform_assay,
-      group.by = input$group_by
+      assay    = iso_settings()$assay,
+      group.by = iso_settings()$group_by
     ) + theme(axis.text.x = element_text(angle = 80, hjust = 1))
   })
   
@@ -394,12 +445,13 @@ server <- function(input, output, session) {
   
   # Reactive expression to trigger the heatmap plot when the button is clicked
   reactive_heatmap <- reactive({
-    req(input$GO > lastReset(), selected_isoforms(), seurat_joined())
+    req(input$GO > lastReset(), seurat_joined(), iso_settings())
+    req(length(selected_isoforms()) > 0)
     plot_pseudobulk_heatmap(
       seurat_obj       = seurat_joined(),
-      group.by         = input$group_by,
+      group.by         = iso_settings()$group_by,
       isoforms_to_plot = selected_isoforms(),
-      isoform_assay    = input$isoform_assay
+      isoform_assay    = iso_settings()$assay
     )
   })
   
@@ -408,49 +460,65 @@ server <- function(input, output, session) {
   # Render the DataTable itself
   # ── Isoform stats table (read-only — selection via chips in sidebar) ─────
   output$isoform_table <- DT::renderDataTable({
-    req(filtered_data(), length(selected_isoforms()) > 0)
-    feats    <- selected_isoforms()   # only chip-selected isoforms
+    req(input$GO > lastReset(), filtered_data(), isoform_features_to_plot())
+    feats    <- isoform_features_to_plot()   # all isoforms for the gene
     expr_mat <- filtered_data()$expr_matrix
     expr_sub <- expr_mat[feats, , drop = FALSE]
-    n_cells  <- ncol(expr_mat)        # denominator = all cells
+    n_cells  <- ncol(expr_mat)
     
     total_expr  <- as.numeric(Matrix::rowSums(expr_sub))
     num_cells   <- as.integer(Matrix::rowSums(expr_sub > 0))
-    mean_expr   <- round(total_expr / n_cells, 4)
-    max_expr    <- round(as.numeric(Matrix::rowMaxs(expr_sub)), 3)
     pct_cells   <- round(num_cells / n_cells * 100, 1)
     short_label <- sub("-[^-]+$", "", feats)
+    is_selected <- feats %in% rv$selected_isoform_names
+    # Median expression only among cells that actually express the isoform
+    expr_dense  <- as.matrix(expr_sub)
+    median_expr <- round(apply(expr_dense, 1, function(x) {
+      vals <- x[x > 0]
+      if (length(vals) == 0) 0 else median(vals)
+    }), 2)
     
     df_iso <- data.frame(
-      `Transcript ID`      = short_label,
-      `Mean Norm. Expr.`   = mean_expr,
-      `Max Norm. Expr.`    = max_expr,
-      `% Cells Expressing` = pct_cells,
-      `Cells (n)`          = num_cells,
+      `Selected`                = ifelse(is_selected, "✔", ""),
+      `Transcript ID`           = short_label,
+      `Total Norm. Counts`      = round(total_expr, 1),
+      `% Cells Expressing`      = pct_cells,
+      `Cells (n)`               = num_cells,
+      `Median Expr. (non-zero)` = median_expr,
       check.names = FALSE,
       stringsAsFactors = FALSE
     )
     
     DT::datatable(
       df_iso,
-      rownames  = FALSE,
-      selection = "none",
-      options   = list(
-        dom            = 't',
-        scrollY        = '280px',
+      rownames   = FALSE,
+      selection  = "none",
+      extensions = "Buttons",
+      options    = list(
+        dom            = 'Bt',
+        buttons        = list(list(extend = "csv", text = "Download CSV",
+                                   filename = "isoform_statistics")),
+        scrollY        = '380px',
         scrollCollapse = TRUE,
         paging         = FALSE,
         scrollX        = TRUE,
-        order          = list(list(1, 'desc'))
+        order          = list(list(2, 'desc'))
       )
     ) %>%
-      DT::formatRound(columns = c("Mean Norm. Expr.", "Max Norm. Expr."), digits = 3) %>%
+      DT::formatRound(columns = c("Total Norm. Counts", "Median Expr. (non-zero)"), digits = 1) %>%
       DT::formatStyle(
         "% Cells Expressing",
         background         = DT::styleColorBar(c(0, 100), '#d4eaf7'),
         backgroundSize     = '98% 70%',
         backgroundRepeat   = 'no-repeat',
         backgroundPosition = 'center'
+      ) %>%
+      DT::formatStyle(
+        "Selected",
+        color      = "#2e7d32",
+        fontWeight = "bold",
+        fontSize   = "16px",
+        textAlign  = "center"
       )
   }, server = FALSE)
   
@@ -471,45 +539,42 @@ server <- function(input, output, session) {
   
   #### Render the main plots (with the new req) ####
   
-  # 1) Gene Feature Plot (from filtered_data()$feature_plot_gene)
   output$feature_plot_gene <- renderPlot({
     req(input$GO > lastReset(), filtered_data())
-    filtered_data()$feature_plot_gene   # <--- note “feature_plot_gene” matches the list name
-  })
-  
-  # 2) Violin Plot
+    filtered_data()$feature_plot_gene
+  }) |> bindCache(filtered_data()$feature, iso_settings()$reduction, lastReset())
   output$vln_plot <- renderPlot({
     req(input$GO > lastReset(), filtered_data())
     filtered_data()$vln_plot
-  })
-  
-  # 3) Cell Type DimPlot
+  }) |> bindCache(filtered_data()$feature, iso_settings()$group_by, lastReset())
   output$celltype_plot <- renderPlot({
     req(input$GO > lastReset(), filtered_data())
     filtered_data()$celltype_plot
-  })
+  }) |> bindCache(iso_settings()$reduction, iso_settings()$group_by, filtered_data()$feature, lastReset())
   
   # 4) Isoform Feature Plot
   output$feature_plot_iso <- renderPlot({
     req(isoform_plot())
     isoform_plot()
-  })
+  }) |> bindCache(selected_isoforms(), iso_settings()$reduction, lastReset())
   
   output$dot_plot_iso <- renderPlot({
     req(dotplot_isoform())
     dotplot_isoform()
-  })
+  }) |> bindCache(selected_isoforms(), iso_settings()$assay, iso_settings()$group_by, lastReset())
   
   # Transcript Structure (from GTF)
   output$transcript_plot <- renderPlot({
-    req(input$GO > lastReset(), gtf(), selected_isoforms(), seurat_joined())
-    if (is.null(gtf()) || nrow(gtf()) == 0) {
-      showModal(modalDialog(
-        title = "Missing GTF File",
-        "Please provide a valid GTF to build the isoform stack.",
-        easyClose = TRUE,
-        footer    = NULL
-      ))
+    req(input$GO > lastReset(), selected_isoforms(), seurat_joined())
+    if (is.null(gtf()) || length(gtf()) == 0 || (is.data.frame(gtf()) && nrow(gtf()) == 0)) {
+      # Return a friendly placeholder ggplot
+      ggplot2::ggplot() +
+        ggplot2::annotate("text", x = 0.5, y = 0.6, size = 6, colour = "#888",
+                          label = "No GTF file loaded") +
+        ggplot2::annotate("text", x = 0.5, y = 0.45, size = 4, colour = "#aaa",
+                          label = "Upload a GTF file (or load from HPC) to view transcript structures.") +
+        ggplot2::theme_void() +
+        ggplot2::xlim(0, 1) + ggplot2::ylim(0, 1)
     } else {
       sel     <- selected_isoforms()
       col_map <- isoform_colour_map()
@@ -529,7 +594,7 @@ server <- function(input, output, session) {
   output$heatmap_plot <- renderPlotly({
     req(reactive_heatmap())
     reactive_heatmap()
-  })
+  }) |> bindCache(selected_isoforms(), iso_settings()$group_by, iso_settings()$assay, lastReset())
   
   
   
@@ -537,28 +602,17 @@ server <- function(input, output, session) {
   
   downloadModalServer(
     "celltype_plot",
-    reactive({
-      req(req(input$GO > lastReset()))
-      filtered_data()$celltype_plot
-    }),
+    reactive({ req(input$GO > lastReset()); filtered_data()$celltype_plot }),
     "Cell type_plot"
   )
-  
   downloadModalServer(
     "feature_plot_gene",
-    reactive({
-      req(req(input$GO > lastReset()))
-      filtered_data()$feature_plot
-    }),
+    reactive({ req(input$GO > lastReset()); filtered_data()$feature_plot_gene }),
     "Feature plot - Gene"
   )
-  
   downloadModalServer(
     "vln_plot",
-    reactive({
-      req(req(input$GO > lastReset()))
-      filtered_data()$vln_plot
-    }),
+    reactive({ req(input$GO > lastReset()); filtered_data()$vln_plot }),
     "Violin plot"
   )
   
@@ -603,8 +657,8 @@ server <- function(input, output, session) {
   
   # ── Isoform Proportions Pie Chart ──────────────────────────────────────────
   pie_plot <- reactive({
-    req(input$GO > lastReset(), seurat_joined(), input$feature,
-        input$isoform_assay, input$group_by, selected_isoforms())
+    req(input$GO > lastReset(), seurat_joined(), iso_settings(), filtered_data())
+    req(length(selected_isoforms()) > 0)
     # Use the same colour map as chips — key by stripped transcript ID
     col_map        <- isoform_colour_map()
     stripped_names <- sub("-[^-]+$", "", names(col_map))  # strip -GENENAME
@@ -612,12 +666,12 @@ server <- function(input, output, session) {
     names(col_map) <- stripped_names
     plotIsoformPieFromSeurat(
       seurat_obj        = seurat_joined(),
-      gene              = input$feature,
+      gene              = filtered_data()$feature,
       selected_isoforms = selected_isoforms(),
       ncol              = input$pie_ncol %||% 4L,
-      assay             = input$isoform_assay,
+      assay             = iso_settings()$assay,
       layer             = "counts",
-      cell_type_col     = input$group_by,
+      cell_type_col     = iso_settings()$group_by,
       min_counts        = input$pie_min_counts,
       colour_map        = col_map
     )
@@ -639,20 +693,27 @@ server <- function(input, output, session) {
   
   # ── Expression Trajectory ────────────────────────────────────────────────────
   
-  # Step 1: populate the include selectize when the column changes
-  # Populate trajectory include list from the sidebar group_by column
-  observeEvent(input$group_by, {
-    req(seurat_obj(), input$group_by)
-    lvls <- sort(unique(as.character(seurat_obj()@meta.data[[input$group_by]])))
-    updateSelectizeInput(session, "traj_include",
-                         choices  = lvls,
-                         selected = lvls)
+  # Render the selectize as uiOutput so it is fully destroyed on reset
+  # (updateSelectizeInput is unreliable for clearing server-side selectize).
+  output$traj_include_ui <- renderUI({
+    if (is.null(seurat_joined()) || input$GO <= lastReset()) return(NULL)
+    req(iso_settings())
+    col  <- iso_settings()$group_by
+    lvls <- sort(unique(as.character(seurat_joined()@meta.data[[col]])))
+    selectizeInput("traj_include", label = NULL,
+                   choices  = lvls,
+                   selected = lvls,
+                   multiple = TRUE,
+                   options  = list(placeholder = "Select cell types…"))
   })
   
-  # Step 2: render the rank_list from whatever is currently selected in traj_include
+  # Render drag list once GO has fired (iso_settings snapshotted).
+  # Falls back to all valid levels if traj_include selectize hasn't round-tripped yet.
   output$traj_order_ui <- renderUI({
-    req(input$traj_include)
-    selected <- as.character(input$traj_include)
+    req(input$GO > lastReset(), filtered_data(), seurat_joined(), iso_settings())
+    col      <- iso_settings()$group_by
+    all_lvls <- sort(unique(as.character(seurat_joined()@meta.data[[col]])))
+    selected <- if (length(input$traj_include) > 0) as.character(input$traj_include) else all_lvls
     sortable::rank_list(
       text     = NULL,
       labels   = selected,
@@ -661,9 +722,21 @@ server <- function(input, output, session) {
     )
   })
   
+  # reactive() so chip toggles still update it; iso_settings() snapshots
+  # group_by and assay at GO-press so live input changes have no effect.
   trajectory_plot <- reactive({
-    req(input$GO > lastReset(), seurat_joined(), selected_isoforms(), input$group_by)
-    ordered_lvls <- as.character(unlist(input$traj_cell_order))
+    req(input$GO > lastReset(), seurat_joined(), iso_settings())
+    req(length(selected_isoforms()) > 0)
+    # Filter to only levels that exist in the current column —
+    # traj_cell_order may briefly hold stale labels from the previous
+    # metadata column while traj_order_ui re-renders, causing combine_vars.
+    # traj_cell_order is populated client-side after the rank list renders,
+    # so on the first GO it may be empty. Fall back to all valid levels so
+    # the plot loads immediately without requiring a second GO press.
+    valid_col_lvls <- sort(unique(as.character(seurat_joined()@meta.data[[iso_settings()$group_by]])))
+    ordered_lvls   <- as.character(unlist(input$traj_cell_order))
+    ordered_lvls   <- ordered_lvls[ordered_lvls %in% valid_col_lvls]
+    if (length(ordered_lvls) < 2) ordered_lvls <- valid_col_lvls
     validate(
       need(length(ordered_lvls) >= 2,
            "Please select at least 2 cell types and press GO.")
@@ -671,9 +744,9 @@ server <- function(input, output, session) {
     plotExpressionTrajectory(
       seurat_obj     = seurat_joined(),
       isoforms       = selected_isoforms(),
-      cell_type_col  = input$group_by,
+      cell_type_col  = iso_settings()$group_by,
       ordered_levels = ordered_lvls,
-      assay          = input$isoform_assay,
+      assay          = iso_settings()$assay,
       layer          = "data"
     )
   })
@@ -683,8 +756,39 @@ server <- function(input, output, session) {
     trajectory_plot()
   })
   
+  trajectory_gene_plot <- reactive({
+    req(input$GO > lastReset(), seurat_joined(), iso_settings(), filtered_data())
+    # traj_cell_order is populated client-side after the rank list renders,
+    # so on the first GO it may be empty. Fall back to all valid levels so
+    # the plot loads immediately without requiring a second GO press.
+    valid_col_lvls <- sort(unique(as.character(seurat_joined()@meta.data[[iso_settings()$group_by]])))
+    ordered_lvls   <- as.character(unlist(input$traj_cell_order))
+    ordered_lvls   <- ordered_lvls[ordered_lvls %in% valid_col_lvls]
+    if (length(ordered_lvls) < 2) ordered_lvls <- valid_col_lvls
+    validate(need(length(ordered_lvls) >= 2, "Please select at least 2 cell types and set order below."))
+    # Gene from filtered_data snapshot — not live input$feature
+    gene <- filtered_data()$feature
+    req(gene)
+    default_assay <- DefaultAssay(seurat_joined())
+    plotExpressionTrajectory(
+      seurat_obj     = seurat_joined(),
+      isoforms       = gene,
+      cell_type_col  = iso_settings()$group_by,
+      ordered_levels = ordered_lvls,
+      assay          = default_assay,
+      layer          = "data"
+    )
+  })
+  
+  output$trajectory_gene_plot <- renderPlot({
+    req(trajectory_gene_plot())
+    trajectory_gene_plot()
+  })
+  
   # ── Isoform chip panel ────────────────────────────────────────────────────
   output$isoform_chips_panel <- renderUI({
+    # Return nothing if no data loaded or no GO has run since last reset
+    if (is.null(seurat_obj()) || input$GO <= lastReset()) return(NULL)
     feats <- isoform_features_to_plot()
     if (is.null(feats) || length(feats) == 0) return(NULL)
     
@@ -728,9 +832,20 @@ server <- function(input, output, session) {
     
     n_sel <- length(selected)
     tagList(
-      tags$div(class = "chip-panel-title",
-               paste0("Isoforms (", n_sel, " of ", n_feats, " selected)")),
-      tags$div(class = "chip-panel-hint", "Click to toggle • Bar = relative expression"),
+      tags$div(style = "display: flex; align-items: center; gap: 6px; margin-bottom: 4px;",
+               tags$span(class = "chip-panel-title",
+                         paste0("Isoforms (", n_sel, " of ", n_feats, " selected)")),
+               tags$span(
+                 class = "chip-info-icon",
+                 `data-toggle`   = "popover",
+                 `data-trigger`  = "hover focus",
+                 `data-placement`= "right",
+                 `data-content`  = "Click to select or deselect an isoform for plotting. The bar shows each isoform's total expression as a fraction of the most highly expressed isoform for this gene.",
+                 `data-html`     = "false",
+                 tabindex = "0",
+                 "i"
+               )
+      ),
       tags$div(style = "display: flex; flex-wrap: wrap;", chips)
     )
   })
@@ -742,6 +857,15 @@ server <- function(input, output, session) {
       trajectory_plot()
     }),
     "Expression Trajectory"
+  )
+  
+  downloadModalServer(
+    "trajectory_gene_plot",
+    reactive({
+      req(input$GO > lastReset())
+      trajectory_gene_plot()
+    }),
+    "Gene Expression Trajectory"
   )
   
 }

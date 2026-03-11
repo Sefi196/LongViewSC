@@ -16,3 +16,4 @@ dependencies:
   - r-shiny
   - bioconductor-rtracklayer
   - r-devtools
+  - shinycssloaders
