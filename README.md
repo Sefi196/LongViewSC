@@ -1,117 +1,103 @@
-<h1 style="text-align: center;">
+# LongViewSC
 
-LongViewSC: Interactive Visualization of Gene and Isoform Expression in Single-Cell Data
+**Interactive visualisation of gene and isoform expression in long-read single-cell data.**
 
-</h1>
+LongViewSC is a Shiny application that lets researchers explore gene and isoform expression from long-read scRNA-seq data without writing any code. Upload a Seurat object, select a gene, and navigate six visualisation tabs.
 
-<h1 style="text-align: center;">
+## Try it online
 
-## Overview
+**<https://longviewsc.researchsoftware.unimelb.edu.au/LongViewSC/>**
 
-</h2>
+> Files under ~200 MB load quickly online. For larger datasets use the local installation below.
 
-**LongViewSC** is an interactive Shiny app designed to visualize both gene and isoform expression in Long read single-cell data. This user-friendly tool is built to provide accessible and intuitive visualization for researchers, regardless of their coding experience and allow for intuitive exploration of your data. The application provides various visualization tools to help researchers easily compare gene and isoform expression across different conditions, clusters and cell types.
+## Visualisation tabs
 
-### What You Can Do
+| Tab | What it shows |
+|-----|---------------|
+| **Overview** | UMAP coloured by group, gene feature plot, violin plot |
+| **Isoform Statistics** | Searchable table of all detected isoforms for a gene |
+| **Isoform Expression** | Per-isoform feature plots and violin plots |
+| **Transcript Structure** | Exon-intron architecture from GTF (requires GTF upload) |
+| **Pseudobulk Heatmap** | Interactive clustered heatmap of log(CPM+1) isoform expression |
+| **Proportions** | Faceted pie charts showing isoform fractions per group |
+| **Trajectory** | Expression across an ordered sequence of groups with loess smooth |
 
--   **Visualize gene expression** using feature plots and violin plots.
--   **Explore isoform expression** at the single-cell level.
--   **Analyze transcript structure** View exon-intron structures of selected isoforms.
--   **Pseudobulk Heatmap**: Aggregate and visualize isoform expression across clusters or conditions.
--   **Dynamic Selection**: Choose specific isoforms or all isoforms of a gene for analysis.
+## Input data
 
-**If you find this application helpful, please cite our work: {PLACEHOLDER}.**
+### Seurat Object (`.rds` / `.qs` / `.qs2`)
+- Must contain a **gene assay** (e.g. `RNA`) and an **isoform assay** (e.g. `iso`).
+- Isoform features must follow the naming convention: `ENST00000XXXXX.X-GENENAME`  
+  (e.g. `ENST00000544301.7-VIM`).
+- Requires at least one dimensional reduction (UMAP, PCA, etc.).
+- Metadata must include a column for cell grouping (cluster, cell type, condition).
 
-## How to Use the App
+### GTF File (`.gtf`) — optional
+- Standard GTF with a `transcript_id` attribute matching your isoform assay IDs.
+- Only needed for the **Transcript Structure** tab.
 
-1.  **Upload Data**
-    -   Load a Seurat `.rds` file (required).
-    -   Upload a `.gtf` file for annotation (optional).
-2.  **Select Parameters**
-    -   Choose a gene to analyze.
-    -   Select a dimensional reduction method.
-    -   Specify the isoform assay. **Don't forget to do this!**
-    -   Define the metadata column to group cells.
-    -   Set the number of isoforms to display.
-3.  **Generate Plots**
-    -   Click **GO** to visualize selected features.
-4.  **Interpret Results**
-    -   Explore expression patterns and isoform structure
-5.  **Download your data**
-    -   (Under development)
+> See the [FLAMESv2 Long-Read Single-Cell Tutorial](https://sefi196.github.io/FLAMESv2_LR_sc_tutorial/) for instructions on generating compatible files.
 
-## File Formats
+## Local installation
 
-### Input Files
+### 1. Install conda or miniconda
 
--   A **Seurat Object (.rds)**: A Seurat object containing gene and isoform expression data, metadata, and dimensional reductions.
-    -   The Seurat object **must contain** a gene and isoform assay.
-    -   **Isoforms** must be labeled in the following format: `isoformID-geneID` (e.g., `ENST00000544301.7-VIM`).
--   **GTF File (.gtf)**: A gene annotation file.
+See <https://www.anaconda.com/docs/getting-started/miniconda/install>.
 
-📌 **Note:** If you are unsure about the format of your sample files, please refer to this comprehensive tutorial on generating these files from gene and count matrices: [FLAMESv2 Long-Read Single-Cell Tutorial](https://sefi196.github.io/FLAMESv2_LR_sc_tutorial/)
+### 2. Clone the repository
 
-## Installation and Requirements
-
-### **Option 1: Access LongViewSC online** (currently under development)
-
-<https://sefi196.shinyapps.io/sc_expresstion_view/>
-
-For optimal performance, we recommend that users upload files smaller than 200MB. For those who wish to explore larger files, please refer to **Option 2** for alternative installation options.
-
-### **Option 2 : Local installation**
-
-For users exploring large file \> 200MB or many files sequentially. In this case uploads may be slow and to overcome this, a local installation is recommended. The application has dependencies that we have provided as a conda environment file.
-
-1.  **Install conda or miniconda**
-
-Installation of conda or miniconda will depend on your system. see <https://www.anaconda.com/docs/getting-started/miniconda/install> for details.
-
-2.  **Clone this repo:**
-
-``` bash
-git clone https://github.com/Sefi196/LongViewSC.git 
+```bash
+git clone https://github.com/Sefi196/LongViewSC.git
 cd LongViewSC
 ```
 
-3.  **Create and laod the conda environment**
+### 3. Create and activate the conda environment
 
-``` bash
+```bash
 conda env create -f environment.yml
 conda activate LongViewSC_env
 ```
 
-4.  **Install ggtranscript in R**
+This installs all R dependencies except `ggtranscript`, which must be installed from GitHub.
 
-``` r
-#open R
-R
-# Ensure devtools has been installed by runing 
-library("devtools")
+### 4. Install ggtranscript
 
-#If it has not been loaded install devtools
-install.packages("devtools")
-#install ggtranscript
-devtools::install_github("dzhang32/ggtranscript")
-
-# exit R
-q()
+```r
+Rscript -e "devtools::install_github('dzhang32/ggtranscript')"
 ```
 
-5.  **Launch the app by running the following command in R:**
+### 5. Launch the app
 
-``` r
-Rscript -e "shiny::runApp('<path_to_app.R>', launch.browser = TRUE)"
+```bash
+Rscript -e "shiny::runApp('app.R', launch.browser=TRUE)"
 ```
 
-This will launch the app in your default web browser.
+The app opens in your default browser and runs entirely locally — no data is sent online.
 
-📌 **Note:** Although the app opens in your browser, it runs **entirely locally** on your machine. No internet connection is required, and no data is sent online.
+## R package dependencies
 
-## Contact and Support
+| Package | Source |
+|---------|--------|
+| shiny, shinyjs, shinydashboard | CRAN |
+| Seurat | CRAN |
+| ggplot2, patchwork, scales | CRAN |
+| plotly, heatmaply | CRAN |
+| DT | CRAN |
+| tibble, dplyr, tidyr | CRAN |
+| markdown, sortable | CRAN |
+| qs, qs2 | CRAN |
+| rtracklayer | Bioconductor |
+| ggtranscript | GitHub (dzhang32/ggtranscript) |
 
-For further inquiries or support, please contact sefi.prawer\@unimelb.edu.au or leave a comment on the github page
+## Citation
 
-------------------------------------------------------------------------
+If you use LongViewSC in your research, please cite our work: *(citation placeholder — to be updated on publication)*.
 
-**Developed by Sefi Prawer in the Clark Laboratory, University of Melbourne**
+## Contact & support
+
+- Email: [sefi.prawer@unimelb.edu.au](mailto:sefi.prawer@unimelb.edu.au)
+- GitHub issues: <https://github.com/Sefi196/LongViewSC/issues>
+- Lab: [Clark Laboratory, University of Melbourne](https://biomedicalsciences.unimelb.edu.au/sbs-research-groups/anatomy-and-physiology-research/stem-cell-and-developmental-biology/clark-lab)
+
+---
+
+**Developed by Sefi Prawer at the Clark Laboratory, University of Melbourne.**

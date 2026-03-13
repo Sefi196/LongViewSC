@@ -4,16 +4,28 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - r-base
-  - r-seurat
+  - r-base>=4.3
+  - r-shiny
   - r-shinyjs
   - r-shinydashboard
+  - r-seurat
+  - r-ggplot2
   - r-plotly
   - r-heatmaply
+  - r-dt
+  - r-patchwork
+  - r-tibble
+  - r-dplyr
+  - r-tidyr
+  - r-scales
+  - r-markdown
+  - r-devtools
+  - r-sortable
   - r-viridis
   - r-sp
-  - r-markdown
-  - r-shiny
   - bioconductor-rtracklayer
-  - r-devtools
-  - shinycssloaders
+  - r-qs
+  - r-qs2
+  - pip
+  - pip:
+    - shinycssloaders

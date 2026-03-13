@@ -1,36 +1,40 @@
-Package: longread-sc-visualization
+Package: LongViewSC
 Type: ShinyApp
-Title: A Long-read Single-cell Visualization Application
-Version: 0.1.0
+Title: Interactive Visualisation of Gene and Isoform Expression in Long-Read Single-Cell Data
+Version: 0.2.0
 Author: Sefi Prawer
 Maintainer: Sefi Prawer <sefi.prawer@unimelb.edu.au>
-Description: This Shiny app allows users to upload Seurat objects and GTF files, and visualize gene and isoform expression in single-cell RNA-seq data.
+Description: LongViewSC is a Shiny application for interactive exploration of gene and
+    isoform expression from long-read single-cell RNA-seq data. Users upload a Seurat
+    object and optional GTF file to visualise UMAP projections, isoform expression,
+    transcript structures, pseudobulk heatmaps, isoform proportions and expression
+    trajectories across cell types or conditions.
 License: GPL-3
 Imports:
   shiny,
+  shinyjs,
+  shinydashboard,
   Seurat,
   ggplot2,
   ggtranscript,
   rtracklayer,
   heatmaply,
-  tibble,
-  markdown,
-  shinyjs,
-  shinydashboard,
   plotly,
-  dplyr,
+  DT,
+  patchwork,
   tibble,
-  shinytest,
-  knitr,
-  RColorBrewer,
-  DT
+  dplyr,
+  tidyr,
+  scales,
+  markdown,
+  sortable,
+  qs,
+  qs2
 Suggests:
-  testthat,
   devtools,
-  Rcpp
-Enhances: 
-  plotly
+  testthat,
+  knitr
 VignetteBuilder: knitr
-URL: https://github.com/Sefi196/LongViewSC
+URL: https://longviewsc.researchsoftware.unimelb.edu.au/LongViewSC/, https://github.com/Sefi196/LongViewSC
 BugReports: https://github.com/Sefi196/LongViewSC/issues
 Roxygen: list(markdown = TRUE)

@@ -263,6 +263,125 @@ ui <- fluidPage(
     .plot-box.plot-collapsed .plot-body { display: none !important; }
     .plot-box.plot-collapsed .collapse-chevron { transform: rotate(-90deg); }
     .plot-title-row:hover .collapse-chevron { color: #337ab7; }
+    /* ── Tutorial / Instructions page ──────────────────────────────────── */
+    #instructionsPage { background: #fff; padding: 0 !important; }
+    .tut-hero {
+      background: linear-gradient(135deg, #2c3e50 0%, #1a6b8a 100%);
+      color: white; padding: 52px 30px 44px; text-align: center;
+    }
+    .tut-hero h1 { font-size: 2.4em; font-weight: 700; margin: 0 0 10px; }
+    .tut-hero p  { font-size: 1.1em; opacity: 0.88; max-width: 680px; margin: 0 auto 22px; }
+    .btn-hero {
+      background: #3d8b6e; color: white !important; padding: 11px 26px;
+      border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.97em;
+      display: inline-block; margin: 4px;
+    }
+    .btn-hero:hover { background: #2e6d56; }
+    .btn-hero-outline {
+      background: transparent; color: white !important; padding: 10px 26px;
+      border-radius: 6px; border: 2px solid rgba(255,255,255,0.65);
+      text-decoration: none; font-weight: 600; font-size: 0.97em;
+      display: inline-block; margin: 4px;
+    }
+    .btn-hero-outline:hover { background: rgba(255,255,255,0.12); }
+    .quick-cards {
+      display: flex; gap: 16px; padding: 28px 30px; background: #f4f7f6;
+      justify-content: center; flex-wrap: wrap;
+    }
+    .quick-card {
+      background: white; border-radius: 10px; padding: 22px 18px; flex: 1;
+      min-width: 200px; max-width: 260px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      text-align: center; border-top: 4px solid #3d8b6e;
+    }
+    .quick-card .qc-num {
+      display: inline-block; width: 38px; height: 38px; border-radius: 50%;
+      background: #3d8b6e; color: white; font-size: 18px; font-weight: 700;
+      line-height: 38px; margin-bottom: 10px;
+    }
+    .quick-card h4 { font-weight: 700; color: #2c3e50; margin: 6px 0 6px; font-size: 15px; }
+    .quick-card p  { font-size: 13px; color: #666; margin: 0; line-height: 1.55; }
+    .tut-divider {
+      text-align: center; padding: 24px 0 8px; font-size: 11.5px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase; color: #3d8b6e; background: white;
+      border-bottom: 1px solid #e9ecef;
+    }
+    .tut-section { padding: 38px 30px; border-bottom: 1px solid #e9ecef; background: white; }
+    .tut-section:nth-child(even) { background: #f8f9fa; }
+    .tut-section-inner {
+      max-width: 1080px; margin: 0 auto; display: flex; align-items: flex-start; gap: 40px;
+    }
+    .tut-section-inner.reverse { flex-direction: row-reverse; }
+    .tut-text { flex: 1; min-width: 0; }
+    .tut-img  { flex: 1.25; min-width: 0; }
+    .tut-step-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border-radius: 50%; background: #2c3e50;
+      color: white; font-size: 13px; font-weight: 700; margin-right: 10px; flex-shrink: 0;
+    }
+    .tut-section h2 {
+      display: flex; align-items: center; font-size: 1.3em;
+      font-weight: 700; color: #2c3e50; margin-bottom: 12px;
+    }
+    .tut-tab-badge {
+      display: inline-block; background: #337ab7; color: white; font-size: 10.5px;
+      font-weight: 600; padding: 2px 8px; border-radius: 12px;
+      vertical-align: middle; margin-left: 8px; letter-spacing: 0.03em;
+    }
+    .tut-section p  { color: #444; line-height: 1.7; font-size: 13.5px; margin-bottom: 8px; }
+    .tut-section ul { color: #444; line-height: 1.85; font-size: 13.5px; padding-left: 18px; margin-bottom: 8px; }
+    .tut-section li { margin-bottom: 3px; }
+    .tut-note {
+      background: #eaf6f2; border-left: 4px solid #3d8b6e; border-radius: 0 6px 6px 0;
+      padding: 9px 13px; margin: 12px 0; font-size: 13px; color: #2c5444;
+    }
+    .tut-warn {
+      background: #fff8e1; border-left: 4px solid #f0ad4e; border-radius: 0 6px 6px 0;
+      padding: 9px 13px; margin: 12px 0; font-size: 13px; color: #7a5c00;
+    }
+    .tut-screenshot {
+      border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      border: 1px solid #dee2e6; max-width: 100%; height: auto; display: block;
+    }
+    .tut-screenshot-cap {
+      font-size: 12px; color: #888; text-align: center; margin-top: 7px; font-style: italic;
+    }
+    .tut-screenshot-pair { display: flex; gap: 10px; margin-bottom: 10px; }
+    .tut-screenshot-pair > div { flex: 1; }
+    .tut-install { background: #2c3e50; color: #e0e0e0; padding: 40px 30px; }
+    .tut-install > h2 { color: white; font-size: 1.4em; margin-bottom: 22px; text-align: center; }
+    .tut-install-cards { display: flex; gap: 20px; max-width: 980px; margin: 0 auto; flex-wrap: wrap; }
+    .tut-install-card {
+      background: rgba(255,255,255,0.07); border-radius: 10px; padding: 22px; flex: 1;
+      min-width: 270px; border: 1px solid rgba(255,255,255,0.1);
+    }
+    .tut-install-card h3 { color: #7ecba1; font-size: 1.05em; margin: 0 0 10px; }
+    .tut-install-card p { font-size: 13px; line-height: 1.65; color: #bbb; margin-bottom: 6px; }
+    .tut-code {
+      background: #1a252f; color: #a8d8a8; padding: 10px 13px; border-radius: 6px;
+      font-family: monospace; font-size: 12px; margin: 8px 0; white-space: pre;
+      overflow-x: auto; display: block;
+    }
+    .tut-data { background: #fff; padding: 40px 30px; }
+    .tut-data > h2 { text-align: center; color: #2c3e50; margin-bottom: 26px; font-weight: 700; }
+    .tut-data-cards { display: flex; gap: 18px; max-width: 980px; margin: 0 auto; flex-wrap: wrap; }
+    .tut-data-card {
+      flex: 1; min-width: 240px; border: 1px solid #dee2e6; border-radius: 8px;
+      padding: 20px; border-top: 3px solid #3d8b6e;
+    }
+    .tut-data-card h4 { color: #2c3e50; font-weight: 700; margin: 0 0 10px; font-size: 14px; }
+    .tut-data-card p, .tut-data-card ul { font-size: 13px; color: #555; line-height: 1.7; margin: 0; padding-left: 16px; }
+    .tut-footer {
+      background: #f4f7f6; padding: 18px 20px; text-align: center;
+      font-size: 13px; color: #888; border-top: 1px solid #e9ecef;
+    }
+    .tut-footer a { color: #3d8b6e; text-decoration: none; }
+    @media (max-width: 768px) {
+      .tut-section-inner, .tut-section-inner.reverse { flex-direction: column; }
+      .tut-install-cards, .tut-data-cards, .quick-cards { flex-direction: column; }
+      .tut-screenshot-pair { flex-direction: column; }
+      .tut-hero h1 { font-size: 1.7em; }
+    }
+
     "))
   ),
   
@@ -348,18 +467,281 @@ ui <- fluidPage(
                z-index: 9999;"),
   
   
-  div(id = "instructionsPage", style = "display: none;", 
-      fluidPage(
-        column(12,
-               # Full-width image display
-               tags$img(src = "Readme_home_app.png", style = "width: 100%; height: auto; display: block;"),
-               includeMarkdown("README.md")
+  div(id = "instructionsPage", style = "display: none;",
+
+    # ── Hero ──────────────────────────────────────────────────────────────
+    div(class = "tut-hero",
+      tags$h1("LongViewSC"),
+      tags$p("Interactive visualisation of gene and isoform expression in long-read single-cell data"),
+      HTML('<a class="btn-hero" href="https://longviewsc.researchsoftware.unimelb.edu.au/LongViewSC/" target="_blank">&#127758; Open App Online</a>
+           <a class="btn-hero-outline" href="https://github.com/Sefi196/LongViewSC" target="_blank">&#128196; GitHub</a>
+           <a class="btn-hero-outline" href="https://sefi196.github.io/FLAMESv2_LR_sc_tutorial/" target="_blank">&#128218; Data Prep Tutorial</a>')
+    ),
+
+    # ── Quick-start cards ─────────────────────────────────────────────────
+    div(class = "quick-cards",
+      div(class = "quick-card",
+        div(class = "qc-num", "1"),
+        tags$h4("Upload Data"),
+        tags$p("Load a Seurat object (.rds / .qs / .qs2) and optional .gtf annotation, or click Demo Data to explore instantly.")
+      ),
+      div(class = "quick-card",
+        div(class = "qc-num", "2"),
+        tags$h4("Configure"),
+        tags$p("Select your gene, isoform assay, grouping variable and dimensional reduction, then choose isoforms from the chip panel.")
+      ),
+      div(class = "quick-card",
+        div(class = "qc-num", "3"),
+        tags$h4("Click GO"),
+        tags$p("Navigate the six visualisation tabs to explore gene expression, isoform structure, proportions, and trajectories.")
+      )
+    ),
+
+    # ── Section label ─────────────────────────────────────────────────────
+    div(class = "tut-divider", "Visualisation Tabs — Example Outputs (VIM, Demo Dataset)"),
+
+    # ── Tab 1: Overview ───────────────────────────────────────────────────
+    div(class = "tut-section",
+      div(class = "tut-section-inner",
+        div(class = "tut-text",
+          tags$h2(span(class="tut-step-badge","1"), "Overview",
+                  HTML('<span class="tut-tab-badge">Overview tab</span>')),
+          tags$p("The Overview tab gives a high-level view of your dataset with a UMAP coloured by your chosen grouping variable, a gene-level feature plot, and a violin plot comparing expression across groups."),
+          tags$ul(
+            tags$li("Select a ", tags$strong("dimensional reduction"), " (e.g. UMAP, PCA) in the sidebar."),
+            tags$li("Choose a ", tags$strong("metadata column"), " to colour cells by (cluster, cell type, condition)."),
+            tags$li("Hit ", tags$strong("GO"), " to generate all plots — the same button updates every tab.")
+          ),
+          div(class = "tut-note",
+            tags$strong("Quick start:"), " Click ", tags$strong("Demo Data"), " on the landing page to load the built-in dataset, then press GO."
+          )
+        ),
+        div(class = "tut-img",
+          div(class = "tut-screenshot-pair",
+            div(
+              tags$img(src = "example_images/01_umap_clusters.png", class = "tut-screenshot"),
+              tags$p(class = "tut-screenshot-cap", "UMAP — Seurat clusters")
+            ),
+            div(
+              tags$img(src = "example_images/02_vim_feature_plot.png", class = "tut-screenshot"),
+              tags$p(class = "tut-screenshot-cap", "VIM gene expression on UMAP")
+            )
+          ),
+          tags$img(src = "example_images/03_vim_violin.png", class = "tut-screenshot", style = "width:100%;"),
+          tags$p(class = "tut-screenshot-cap", "Violin plot — VIM gene expression by cluster")
         )
       )
+    ),
+
+    # ── Tab 2: Isoform Statistics ─────────────────────────────────────────
+    div(class = "tut-section",
+      div(class = "tut-section-inner reverse",
+        div(class = "tut-text",
+          tags$h2(span(class="tut-step-badge","2"), "Isoform Statistics",
+                  HTML('<span class="tut-tab-badge">Isoform Statistics tab</span>')),
+          tags$p("A searchable, sortable table listing every isoform detected for your selected gene, with mean expression and detection statistics. Use this to identify the most relevant isoforms before diving into plots."),
+          tags$ul(
+            tags$li("Isoforms are named ", tags$code("ENST00000XXXXX.X-GENE"), " (e.g. ", tags$code("ENST00000224237.9-VIM"), ")."),
+            tags$li("A tick (", HTML("&#10003;"), ") marks isoforms currently selected in the sidebar chip panel."),
+            tags$li("Clicking a row in the table also selects/deselects that isoform.")
+          ),
+          div(class = "tut-note",
+            tags$strong("Chip selector:"), " Use the coloured chips in the sidebar to toggle which isoforms appear in the Expression, Proportions, Heatmap and Trajectory tabs."
+          )
+        ),
+        div(class = "tut-img",
+          tags$img(src = "Readme_home_app.png", class = "tut-screenshot"),
+          tags$p(class = "tut-screenshot-cap", "App overview — sidebar chip panel and visualisation tabs")
+        )
+      )
+    ),
+
+    # ── Tab 3: Isoform Expression ─────────────────────────────────────────
+    div(class = "tut-section",
+      div(class = "tut-section-inner",
+        div(class = "tut-text",
+          tags$h2(span(class="tut-step-badge","3"), "Isoform Expression",
+                  HTML('<span class="tut-tab-badge">Isoform Expression tab</span>')),
+          tags$p("Single-cell resolution plots for each selected isoform: a feature plot projected onto the isoform-level UMAP embedding and a violin plot across groups."),
+          tags$ul(
+            tags$li(tags$strong("Feature plots"), " use the isoform-level UMAP (", tags$code("umap_iso"), ") if present, otherwise the gene-level UMAP."),
+            tags$li(tags$strong("Violin plots"), " show expression per isoform, grouped by your chosen metadata column."),
+            tags$li("Only isoforms selected via the chip panel are shown.")
+          ),
+          div(class = "tut-warn",
+            tags$strong("Important:"), " Set the ", tags$strong("Isoform Assay"), " field in the sidebar to the correct assay name (e.g. ", tags$code("iso"), ") before clicking GO."
+          )
+        ),
+        div(class = "tut-img",
+          tags$img(src = "example_images/04_vim_isoform_feature.png", class = "tut-screenshot"),
+          tags$p(class = "tut-screenshot-cap", "VIM isoforms ENST00000224237 and ENST00000487938 on isoform UMAP")
+        )
+      )
+    ),
+
+    # ── Tab 4: Transcript Structure ───────────────────────────────────────
+    div(class = "tut-section",
+      div(class = "tut-section-inner reverse",
+        div(class = "tut-text",
+          tags$h2(span(class="tut-step-badge","4"), "Transcript Structure",
+                  HTML('<span class="tut-tab-badge">Transcript Structure tab</span>')),
+          tags$p("Visualises the exon-intron architecture of each selected isoform from your uploaded GTF file, enabling direct structural comparison."),
+          tags$ul(
+            tags$li("Exons are drawn as filled blocks; introns as directional arrows showing strand."),
+            tags$li("Upload a ", tags$strong(".gtf"), " file in the sidebar — if omitted this tab is empty."),
+            tags$li("GTF transcript IDs must match the ENST IDs in your isoform assay.")
+          ),
+          div(class = "tut-note",
+            tags$strong("Naming:"), " Isoforms must follow the format ", tags$code("ENST00000XXXXX.X-GENENAME"),
+            " for automatic GTF matching."
+          )
+        ),
+        div(class = "tut-img",
+          tags$img(src = "example_images/05_vim_transcript_structure.png", class = "tut-screenshot"),
+          tags$p(class = "tut-screenshot-cap", "Exon-intron structure of all four VIM isoforms")
+        )
+      )
+    ),
+
+    # ── Tab 5: Pseudobulk Heatmap ─────────────────────────────────────────
+    div(class = "tut-section",
+      div(class = "tut-section-inner",
+        div(class = "tut-text",
+          tags$h2(span(class="tut-step-badge","5"), "Pseudobulk Heatmap",
+                  HTML('<span class="tut-tab-badge">Pseudobulk Heatmap tab</span>')),
+          tags$p("Aggregates isoform counts per group, normalises to log(CPM+1), and renders an interactive clustered heatmap — ideal for comparing relative isoform usage across conditions or cell types at a glance."),
+          tags$ul(
+            tags$li("Rows are isoforms; columns are groups; colour intensity = log(CPM+1)."),
+            tags$li("Rows are clustered by expression similarity."),
+            tags$li("The heatmap is fully interactive — hover for exact values, zoom, pan, and download via the camera icon (", HTML("&#128247;"), ").")
+          )
+        ),
+        div(class = "tut-img",
+          tags$img(src = "example_images/06_vim_pseudobulk_heatmap.png", class = "tut-screenshot"),
+          tags$p(class = "tut-screenshot-cap", "VIM isoform pseudobulk expression (log CPM+1) across 8 clusters")
+        )
+      )
+    ),
+
+    # ── Tab 6: Proportions ────────────────────────────────────────────────
+    div(class = "tut-section",
+      div(class = "tut-section-inner reverse",
+        div(class = "tut-text",
+          tags$h2(span(class="tut-step-badge","6"), "Isoform Proportions",
+                  HTML('<span class="tut-tab-badge">Proportions tab</span>')),
+          tags$p("Faceted pie charts — one per group — showing each selected isoform as a proportion of total gene expression. Ideal for detecting isoform switching between cell types or conditions."),
+          tags$ul(
+            tags$li("Selected isoforms are shown as distinct colours; all others are grouped as ", tags$strong("Other isoforms"), " (grey)."),
+            tags$li("Percentages are displayed for slices > 5%."),
+            tags$li("Set ", tags$strong("Min counts"), " in the sidebar to hide groups with low coverage.")
+          ),
+          div(class = "tut-note",
+            tags$strong("Isoform switching:"), " Compare the dominant (largest) slice across groups — a shift in colour indicates a switch in the preferred isoform."
+          )
+        ),
+        div(class = "tut-img",
+          tags$img(src = "example_images/07_vim_isoform_pie.png", class = "tut-screenshot"),
+          tags$p(class = "tut-screenshot-cap", "VIM isoform proportions across all 8 clusters")
+        )
+      )
+    ),
+
+    # ── Tab 7: Trajectory ─────────────────────────────────────────────────
+    div(class = "tut-section",
+      div(class = "tut-section-inner",
+        div(class = "tut-text",
+          tags$h2(span(class="tut-step-badge","7"), "Expression Trajectory",
+                  HTML('<span class="tut-tab-badge">Trajectory tab</span>')),
+          tags$p("Plots single-cell normalised isoform expression across an ordered sequence of groups (e.g. developmental stages), with a loess smooth overlaid per isoform panel. Reveals gradual changes in isoform usage along a trajectory."),
+          tags$ul(
+            tags$li(tags$strong("Drag and drop"), " the group labels in the sidebar to define the left-to-right ordering."),
+            tags$li("Each isoform gets its own panel with an independent y-axis."),
+            tags$li("The black loess curve highlights overall expression trends.")
+          ),
+          div(class = "tut-note",
+            tags$strong("Pairing tip:"), " Use Proportions to see ", tags$em("which"), " isoform dominates, and Trajectory to see ", tags$em("when"), " it changes along the axis."
+          )
+        ),
+        div(class = "tut-img",
+          tags$img(src = "example_images/08_vim_trajectory.png", class = "tut-screenshot"),
+          tags$p(class = "tut-screenshot-cap", "VIM isoform expression trajectory across clusters 0 \u2192 7")
+        )
+      )
+    ),
+
+    # ── Data Format ───────────────────────────────────────────────────────
+    div(class = "tut-data",
+      tags$h2("Input Data Format"),
+      div(class = "tut-data-cards",
+        div(class = "tut-data-card",
+          tags$h4("Seurat Object (.rds / .qs / .qs2)"),
+          tags$ul(
+            tags$li("Must contain a gene assay (e.g. ", tags$code("RNA"), ") and an isoform assay (e.g. ", tags$code("iso"), ")."),
+            tags$li("Isoform features: ", tags$code("ENST00000XXXXX.X-GENENAME"), " (e.g. ", tags$code("ENST00000544301.7-VIM"), ")."),
+            tags$li("Requires at least one dimensional reduction (UMAP, PCA)."),
+            tags$li("Metadata must include a column for cell grouping.")
+          ),
+          div(class = "tut-note",
+            HTML('See the <a href="https://sefi196.github.io/FLAMESv2_LR_sc_tutorial/" target="_blank">FLAMESv2 tutorial</a> for generating compatible objects.')
+          )
+        ),
+        div(class = "tut-data-card",
+          tags$h4("GTF Annotation (.gtf) — Optional"),
+          tags$ul(
+            tags$li("Standard GTF format with a ", tags$code("transcript_id"), " attribute."),
+            tags$li("Transcript IDs must match the ENST IDs in your isoform assay."),
+            tags$li("Only required for the ", tags$strong("Transcript Structure"), " tab."),
+            tags$li("Files up to 5 GB supported locally.")
+          )
+        ),
+        div(class = "tut-data-card",
+          tags$h4("Performance Tips"),
+          tags$ul(
+            tags$li(tags$strong("Online:"), " Keep uploads under 200 MB for best responsiveness."),
+            tags$li(tags$strong("Local:"), " Use ", tags$code("qs::qsave()"), " format for large objects — up to 10x faster loading than .rds."),
+            tags$li(tags$strong("qs / qs2:"), " Both formats are supported; the app auto-detects which library to use.")
+          )
+        )
+      )
+    ),
+
+    # ── Installation ──────────────────────────────────────────────────────
+    div(class = "tut-install",
+      tags$h2("Installation"),
+      div(class = "tut-install-cards",
+        div(class = "tut-install-card",
+          tags$h3("Option 1 \u2014 Use Online"),
+          tags$p("Access LongViewSC directly in your browser. No setup required."),
+          HTML('<div class="tut-code">https://longviewsc.researchsoftware.unimelb.edu.au/LongViewSC/</div>'),
+          tags$p(style="font-size:12px;color:#999;margin-top:6px;", "Recommended for files < 200 MB.")
+        ),
+        div(class = "tut-install-card",
+          tags$h3("Option 2 \u2014 Local Installation"),
+          tags$p("For large files (> 200 MB) or offline use. Requires conda or miniconda."),
+          HTML('<div class="tut-code">git clone https://github.com/Sefi196/LongViewSC.git
+cd LongViewSC
+conda env create -f environment.yml
+conda activate LongViewSC_env</div>'),
+          tags$p(style="font-size:12px;color:#aaa;", "Install ggtranscript (not on conda):"),
+          HTML('<div class="tut-code">Rscript -e "devtools::install_github(\'dzhang32/ggtranscript\')"</div>'),
+          tags$p(style="font-size:12px;color:#aaa;", "Launch the app:"),
+          HTML('<div class="tut-code">Rscript -e "shiny::runApp(\'app.R\', launch.browser=TRUE)"</div>'),
+          tags$p(style="font-size:12px;color:#999;margin-top:6px;", "Runs entirely locally. No data is sent online.")
+        )
+      )
+    ),
+
+    # ── Footer ────────────────────────────────────────────────────────────
+    div(class = "tut-footer",
+      HTML('Developed by <strong>Sefi Prawer</strong> \u2014 Clark Laboratory, University of Melbourne. &nbsp;
+           <a href="mailto:sefi.prawer@unimelb.edu.au">sefi.prawer@unimelb.edu.au</a> &nbsp;|&nbsp;
+           <a href="https://github.com/Sefi196/LongViewSC" target="_blank">GitHub</a> &nbsp;|&nbsp;
+           If you use LongViewSC please cite our work.')
+    )
+
   ),
-  
-  
-  # Main UI - Initially Hidden
+
+# Main UI - Initially Hidden
   div(id = "mainUI",
       
       tags$script(HTML('
