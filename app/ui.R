@@ -176,6 +176,7 @@ ui <- fluidPage(
         background-color: #f8f9fa;
         padding: 15px;
         border-radius: 10px;
+        position: relative;
       }
       .plot-box {
         border: 2px solid #ddd;
@@ -231,7 +232,26 @@ ui <- fluidPage(
     }
     .nav-tabs { border-bottom: 2px solid #337ab7; }
     /* Sidebar collapse */
-    #sidebarToggle { transition: left 0.25s ease; }
+    #sidebarToggle {
+      position: fixed;
+      bottom: 20px;
+      left: 12px;
+      z-index: 9999;
+      background: #f8f9fa;
+      color: #555;
+      border: 1px solid #ddd;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 1px 1px 6px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    #sidebarToggle:hover { background: #e2e6ea; color: #337ab7; }
     /* Collapsible plot boxes */
     .plot-title-row .collapse-chevron {
       margin-left: auto;
@@ -243,26 +263,6 @@ ui <- fluidPage(
     .plot-box.plot-collapsed .plot-body { display: none !important; }
     .plot-box.plot-collapsed .collapse-chevron { transform: rotate(-90deg); }
     .plot-title-row:hover .collapse-chevron { color: #337ab7; }
-    #sidebarToggle {
-      position: fixed;
-      top: 80px;
-      left: 12px;
-      z-index: 9999;
-      background: #2c3e50;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      font-size: 14px;
-      cursor: pointer;
-      box-shadow: 1px 1px 6px rgba(0,0,0,0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-    }
-    #sidebarToggle:hover { background: #337ab7; }
     "))
   ),
   
@@ -394,7 +394,6 @@ ui <- fluidPage(
       // Sidebar collapse
       $(document).on("click", "#sidebarToggle", function() {
         Shiny.setInputValue("sidebarToggle_click", Math.random());
-        // Use sidebar sibling — mainPanel id lands on inner div not the col
         var $sidebarCol = $(".sidebar-panel").parent();
         var $mainCol    = $sidebarCol.siblings().last();
         var icon = $(this).find("i");
@@ -405,6 +404,7 @@ ui <- fluidPage(
           icon.removeClass("fa-chevron-right").addClass("fa-chevron-left");
           $mainCol.removeClass("col-sm-12").addClass("col-sm-8");
         }
+        setTimeout(function() { $(window).trigger("resize"); }, 310);
       });
     });
   ')),
@@ -517,14 +517,14 @@ ui <- fluidPage(
               ),
               
               # ── Section 3: Isoform chip selector ──────────────────────────
-              uiOutput("isoform_chips_panel")
+              uiOutput("isoform_chips_panel"),
               
           )  # end of analysisForm
         ),
         
         mainPanel(
           id = "main_panel_wrap",
-          tags$button(id = "sidebarToggle", title = "Collapse sidebar",
+          tags$button(id = "sidebarToggle", title = "Toggle sidebar",
                       tags$i(class = "fa fa-chevron-left")),
           tabsetPanel(id = "main_tabs",
                       

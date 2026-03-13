@@ -29,10 +29,24 @@ load_seurat_object <- function(path, original_name = NULL) {
   
   if (ext == "rds") {
     readRDS(path)
-  } else if (ext == "qs") {
-    qs::qread(path)
-  } else if (ext == "qs2") {
-    qs2::qs_read(path)
+  } else if (ext %in% c("qs", "qs2")) {
+    # Try qs::qread first; if it fails with a format error, fall back to qs2.
+    # Some pipelines save .qs files using the qs2 format (and vice versa).
+    tryCatch(
+      qs::qread(path),
+      error = function(e) {
+        if (grepl("format not detected|not a qs file|invalid|magic", conditionMessage(e), ignore.case = TRUE)) {
+          tryCatch(
+            qs2::qs_read(path),
+            error = function(e2) {
+              stop("Could not read file as qs or qs2 format. Original error: ", conditionMessage(e))
+            }
+          )
+        } else {
+          stop(e)
+        }
+      }
+    )
   } else {
     stop(paste0(
       "Unsupported file format: '.", ext, "'. ",

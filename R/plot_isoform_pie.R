@@ -41,9 +41,12 @@ plotIsoformPie <- function(raw_data, gene, selected_isoforms = NULL, ncol = 4, m
       stop("No cell types remaining after min_counts filter (threshold = ", min_counts, ")")
   }
   
-  # 3) Strip version suffix (e.g. ".1") from transcript_id
+  # 3) Normalise transcript_id to bare ID — strip dot-version (ENST00000x.10)
+  #    AND -GENENAME suffix (BambuTx13041-PKM) so both conventions match
+  #    the same format used in top_isoforms below.
   df_gene <- dplyr::mutate(df_gene,
-                           stripped_id = sub("[.].*$", "", transcript_id))
+                           stripped_id = sub("-[^-]+$", "",   # strip -GENE
+                                             sub("[.].*$",  "", transcript_id)))  # strip .version
   
   # 4) Determine which isoforms to highlight (from chip selection, stripped to match stripped_id)
   if (!is.null(selected_isoforms) && length(selected_isoforms) > 0) {
@@ -166,9 +169,15 @@ plotIsoformPieFromSeurat <- function(
     tibble::rownames_to_column("cell") %>%
     dplyr::select(cell, cell_type = dplyr::all_of(cell_type_col))
   
-  # Match isoforms that belong to this gene (feature names end in "-GENE")
-  gene_regex      <- paste0("(^|-)", gene, "$")
-  matched_feats   <- grep(gene_regex, rownames(mat), value = TRUE)
+  # Match isoforms belonging to this gene. Two naming conventions:
+  #   1. Standard: ENST00000123.1-VIM  (ends with -GENENAME)
+  #   2. Bambu novel: BambuTx12041      (no suffix — gene IS the transcript id)
+  gene_regex    <- paste0("(^|-)", gene, "$")           # ends with -GENE
+  matched_feats <- grep(gene_regex, rownames(mat), value = TRUE)
+  if (length(matched_feats) == 0) {
+    # Fallback: exact match or prefix match (Bambu-style IDs)
+    matched_feats <- grep(paste0("^", gene, "($|\\.)"), rownames(mat), value = TRUE)
+  }
   if (length(matched_feats) == 0)
     stop("No isoforms found for gene: ", gene)
   
