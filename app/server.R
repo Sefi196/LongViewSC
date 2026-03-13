@@ -325,10 +325,15 @@ server <- function(input, output, session) {
     total_expr     <- Matrix::rowSums(subset_expr)
     matching_feats <- names(sort(total_expr, decreasing = TRUE))
     
+    # Ensure gene-level assay is default so FeaturePlot/VlnPlot find the gene immediately
+    seu_g <- seurat_joined()
+    gene_assay_name <- setdiff(names(seu_g@assays), assay_name)[1]
+    if (!is.na(gene_assay_name)) Seurat::DefaultAssay(seu_g) <- gene_assay_name
+
     list(
-      celltype_plot     = DimPlot(seurat_joined(), reduction = input$reduction, group.by = input$group_by),
-      feature_plot_gene = FeaturePlot(seurat_joined(), features = input$feature, reduction = input$reduction),
-      vln_plot          = VlnPlot(seurat_joined(), features = input$feature, group.by = input$group_by),
+      celltype_plot     = DimPlot(seu_g, reduction = input$reduction, group.by = input$group_by),
+      feature_plot_gene = FeaturePlot(seu_g, features = input$feature, reduction = input$reduction),
+      vln_plot          = VlnPlot(seu_g, features = input$feature, group.by = input$group_by),
       isoform_features  = matching_feats,
       expr_matrix       = expr_matrix,
       feature           = input$feature

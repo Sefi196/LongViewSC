@@ -265,41 +265,57 @@ ui <- fluidPage(
     .plot-title-row:hover .collapse-chevron { color: #337ab7; }
     /* ── Tutorial / Instructions page ──────────────────────────────────── */
     #instructionsPage { background: #fff; padding: 0 !important; }
-    .tut-hero {
-      background: linear-gradient(135deg, #2c3e50 0%, #1a6b8a 100%);
-      color: white; padding: 52px 30px 44px; text-align: center;
+    html { scroll-behavior: smooth; }
+    .wf-header {
+      background: #f8f9fa; padding: 28px 30px 24px; border-bottom: 1px solid #e9ecef;
+      text-align: center;
     }
-    .tut-hero h1 { font-size: 2.4em; font-weight: 700; margin: 0 0 10px; }
-    .tut-hero p  { font-size: 1.1em; opacity: 0.88; max-width: 680px; margin: 0 auto 22px; }
-    .btn-hero {
-      background: #3d8b6e; color: white !important; padding: 11px 26px;
-      border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.97em;
-      display: inline-block; margin: 4px;
+    .wf-header h1 { font-size: 2em; font-weight: 700; color: #2c3e50; margin: 0 0 6px; }
+    .wf-header > p { font-size: 1em; color: #666; margin: 0 0 18px; }
+    .wf-header-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .btn-wf-outline {
+      background: transparent; color: #3d8b6e !important; padding: 9px 20px;
+      border-radius: 6px; border: 2px solid #3d8b6e;
+      text-decoration: none; font-weight: 600; font-size: 0.88em;
+      display: inline-block; margin: 3px;
     }
-    .btn-hero:hover { background: #2e6d56; }
-    .btn-hero-outline {
-      background: transparent; color: white !important; padding: 10px 26px;
-      border-radius: 6px; border: 2px solid rgba(255,255,255,0.65);
-      text-decoration: none; font-weight: 600; font-size: 0.97em;
-      display: inline-block; margin: 4px;
+    .btn-wf-outline:hover { background: #3d8b6e; color: white !important; }
+    .btn-wf-outline.primary { background: #3d8b6e; color: white !important; }
+    .btn-wf-outline.primary:hover { background: #2e6d56; }
+    .workflow-steps {
+      display: flex; align-items: stretch; padding: 30px 30px;
+      background: #fff; justify-content: center; flex-wrap: wrap;
+      border-bottom: 1px solid #e9ecef; gap: 0;
     }
-    .btn-hero-outline:hover { background: rgba(255,255,255,0.12); }
-    .quick-cards {
-      display: flex; gap: 16px; padding: 28px 30px; background: #f4f7f6;
-      justify-content: center; flex-wrap: wrap;
-    }
-    .quick-card {
-      background: white; border-radius: 10px; padding: 22px 18px; flex: 1;
-      min-width: 200px; max-width: 260px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    .wf-step {
+      background: #fff; border: 1px solid #e9ecef; border-radius: 10px;
+      padding: 22px 16px; flex: 1; min-width: 160px; max-width: 215px;
       text-align: center; border-top: 4px solid #3d8b6e;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
-    .quick-card .qc-num {
-      display: inline-block; width: 38px; height: 38px; border-radius: 50%;
-      background: #3d8b6e; color: white; font-size: 18px; font-weight: 700;
-      line-height: 38px; margin-bottom: 10px;
+    .wf-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 40px; height: 40px; border-radius: 50%; background: #3d8b6e;
+      color: white; font-size: 18px; font-weight: 700; margin-bottom: 10px;
     }
-    .quick-card h4 { font-weight: 700; color: #2c3e50; margin: 6px 0 6px; font-size: 15px; }
-    .quick-card p  { font-size: 13px; color: #666; margin: 0; line-height: 1.55; }
+    .wf-step h4 { font-weight: 700; color: #2c3e50; font-size: 14px; margin: 0 0 7px; }
+    .wf-step p  { font-size: 12px; color: #666; line-height: 1.55; margin: 0 0 10px; }
+    .wf-btns { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+    .btn-wf-primary {
+      background: #3d8b6e; color: white !important; padding: 7px 14px;
+      border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 11.5px;
+      display: inline-block;
+    }
+    .btn-wf-primary:hover { background: #2e6d56; }
+    .btn-wf-link {
+      color: #3d8b6e !important; font-size: 11.5px; font-weight: 500;
+      text-decoration: none;
+    }
+    .btn-wf-link:hover { text-decoration: underline; }
+    .wf-connector {
+      display: flex; align-items: center; padding: 0 10px; color: #adb5bd;
+      font-size: 24px; font-weight: 300; align-self: center; flex-shrink: 0;
+    }
     .tut-divider {
       text-align: center; padding: 24px 0 8px; font-size: 11.5px; font-weight: 700;
       letter-spacing: 0.12em; text-transform: uppercase; color: #3d8b6e; background: white;
@@ -377,9 +393,10 @@ ui <- fluidPage(
     .tut-footer a { color: #3d8b6e; text-decoration: none; }
     @media (max-width: 768px) {
       .tut-section-inner, .tut-section-inner.reverse { flex-direction: column; }
-      .tut-install-cards, .tut-data-cards, .quick-cards { flex-direction: column; }
+      .tut-install-cards, .tut-data-cards, .workflow-steps { flex-direction: column; }
+      .wf-connector { display: none; }
       .tut-screenshot-pair { flex-direction: column; }
-      .tut-hero h1 { font-size: 1.7em; }
+      .wf-header h1 { font-size: 1.6em; }
     }
 
     "))
@@ -469,36 +486,54 @@ ui <- fluidPage(
   
   div(id = "instructionsPage", style = "display: none;",
 
-    # ── Hero ──────────────────────────────────────────────────────────────
-    div(class = "tut-hero",
+    # ── Page header ────────────────────────────────────────────────────────
+    div(class = "wf-header",
       tags$h1("LongViewSC"),
       tags$p("Interactive visualisation of gene and isoform expression in long-read single-cell data"),
-      HTML('<a class="btn-hero" href="https://longviewsc.researchsoftware.unimelb.edu.au/LongViewSC/" target="_blank">&#127758; Open App Online</a>
-           <a class="btn-hero-outline" href="https://github.com/Sefi196/LongViewSC" target="_blank">&#128196; GitHub</a>
-           <a class="btn-hero-outline" href="https://sefi196.github.io/FLAMESv2_LR_sc_tutorial/" target="_blank">&#128218; Data Prep Tutorial</a>')
+      div(class = "wf-header-btns",
+        HTML('<a class="btn-wf-outline primary" href="https://longviewsc.researchsoftware.unimelb.edu.au/LongViewSC/" target="_blank">&#127758; Open App Online</a>
+             <a class="btn-wf-outline" href="https://github.com/Sefi196/LongViewSC" target="_blank">&#128196; GitHub</a>
+             <a class="btn-wf-outline" href="https://sefi196.github.io/FLAMESv2_LR_sc_tutorial/" target="_blank">&#128218; Data Prep Tutorial</a>
+             <a class="btn-wf-outline" href="#installation">&#128295; Local Install</a>')
+      )
     ),
 
-    # ── Quick-start cards ─────────────────────────────────────────────────
-    div(class = "quick-cards",
-      div(class = "quick-card",
-        div(class = "qc-num", "1"),
-        tags$h4("Upload Data"),
-        tags$p("Load a Seurat object (.rds / .qs / .qs2) and optional .gtf annotation, or click Demo Data to explore instantly.")
+    # ── 4-step workflow ────────────────────────────────────────────────────
+    div(class = "workflow-steps",
+      div(class = "wf-step",
+        div(class = "wf-num", "1"),
+        tags$h4("Prepare your data"),
+        tags$p("Generate a compatible Seurat object using the FLAMES long-read single-cell pipeline."),
+        div(class = "wf-btns",
+          HTML('<a class="btn-wf-primary" href="https://sefi196.github.io/FLAMESv2_LR_sc_tutorial/" target="_blank">&#128218; FLAMESv2 Tutorial</a>'),
+          HTML('<a class="btn-wf-link" href="#data-format">Data format details &#8595;</a>')
+        )
       ),
-      div(class = "quick-card",
-        div(class = "qc-num", "2"),
+      div(class = "wf-connector", HTML("&#8594;")),
+      div(class = "wf-step",
+        div(class = "wf-num", "2"),
         tags$h4("Configure"),
-        tags$p("Select your gene, isoform assay, grouping variable and dimensional reduction, then choose isoforms from the chip panel.")
+        tags$p("Upload your Seurat object, select gene, isoform assay and grouping variable, then pick isoforms from the chip panel.")
       ),
-      div(class = "quick-card",
-        div(class = "qc-num", "3"),
+      div(class = "wf-connector", HTML("&#8594;")),
+      div(class = "wf-step",
+        div(class = "wf-num", "3"),
         tags$h4("Click GO"),
-        tags$p("Navigate the six visualisation tabs to explore gene expression, isoform structure, proportions, and trajectories.")
+        tags$p("Press the green GO button to generate all visualisations across every tab at once.")
+      ),
+      div(class = "wf-connector", HTML("&#8594;")),
+      div(class = "wf-step",
+        div(class = "wf-num", "4"),
+        tags$h4("Visualise"),
+        tags$p("Explore 7 interactive tabs: UMAP, isoform stats, expression, transcript structure, heatmap, proportions, and trajectory."),
+        div(class = "wf-btns",
+          HTML('<a class="btn-wf-link" href="#visualisations">See examples &#8595;</a>')
+        )
       )
     ),
 
     # ── Section label ─────────────────────────────────────────────────────
-    div(class = "tut-divider", "Visualisation Tabs — Example Outputs (VIM, Demo Dataset)"),
+    div(id = "visualisations", class = "tut-divider", "Visualisation Tabs — Example Outputs (VIM, Demo Dataset)"),
 
     # ── Tab 1: Overview ───────────────────────────────────────────────────
     div(class = "tut-section",
@@ -539,19 +574,23 @@ ui <- fluidPage(
         div(class = "tut-text",
           tags$h2(span(class="tut-step-badge","2"), "Isoform Statistics",
                   HTML('<span class="tut-tab-badge">Isoform Statistics tab</span>')),
-          tags$p("A searchable, sortable table listing every isoform detected for your selected gene, with mean expression and detection statistics. Use this to identify the most relevant isoforms before diving into plots."),
+          tags$p("A searchable, sortable table listing every isoform detected for your selected gene, with expression and detection statistics. Use this to identify the most relevant isoforms before diving into other plots."),
           tags$ul(
             tags$li("Isoforms are named ", tags$code("ENST00000XXXXX.X-GENE"), " (e.g. ", tags$code("ENST00000224237.9-VIM"), ")."),
             tags$li("A tick (", HTML("&#10003;"), ") marks isoforms currently selected in the sidebar chip panel."),
-            tags$li("Clicking a row in the table also selects/deselects that isoform.")
+            tags$li("Clicking a row also selects/deselects that isoform.")
           ),
           div(class = "tut-note",
-            tags$strong("Chip selector:"), " Use the coloured chips in the sidebar to toggle which isoforms appear in the Expression, Proportions, Heatmap and Trajectory tabs."
+            tags$strong("Chip selector:"), " Coloured chips in the sidebar toggle which isoforms appear across the Expression, Heatmap, Proportions and Trajectory tabs. Click any chip to select or deselect it."
           )
         ),
         div(class = "tut-img",
-          tags$img(src = "Readme_home_app.png", class = "tut-screenshot"),
-          tags$p(class = "tut-screenshot-cap", "App overview — sidebar chip panel and visualisation tabs")
+          tags$img(src = "example_images/10_chip_selector.png", class = "tut-screenshot",
+                   style = "width:100%; margin-bottom: 14px;"),
+          tags$p(class = "tut-screenshot-cap", "Isoform chip selector — click chips to toggle isoforms on/off"),
+          tags$img(src = "example_images/09_isoform_table.png", class = "tut-screenshot",
+                   style = "width:100%;"),
+          tags$p(class = "tut-screenshot-cap", "Isoform Statistics table — VIM isoforms with expression metrics")
         )
       )
     ),
@@ -670,7 +709,7 @@ ui <- fluidPage(
     ),
 
     # ── Data Format ───────────────────────────────────────────────────────
-    div(class = "tut-data",
+    div(id = "data-format", class = "tut-data",
       tags$h2("Input Data Format"),
       div(class = "tut-data-cards",
         div(class = "tut-data-card",
@@ -706,7 +745,7 @@ ui <- fluidPage(
     ),
 
     # ── Installation ──────────────────────────────────────────────────────
-    div(class = "tut-install",
+    div(id = "installation", class = "tut-install",
       tags$h2("Installation"),
       div(class = "tut-install-cards",
         div(class = "tut-install-card",

@@ -104,35 +104,37 @@ plotIsoformPie <- function(raw_data, gene, selected_isoforms = NULL, ncol = 4, m
   # 8) Plot
   ggplot2::ggplot(df5_summed,
                   ggplot2::aes(x = "", y = proportion, fill = transcript_group)) +
-    ggplot2::geom_col(color = "black", size = 0.2, width = 1) +
+    ggplot2::geom_col(color = "white", linewidth = 0.4, width = 1) +
     ggplot2::scale_y_continuous(limits = c(0, 1), expand = c(0, 0),
                                 oob = scales::squish) +
     ggplot2::coord_polar(theta = "y") +
     ggplot2::facet_wrap(~ cell_label, ncol = ncol, strip.position = "bottom") +
     ggplot2::geom_text(
-      ggplot2::aes(label = ifelse(proportion > 0.05,
-                                  paste0(round(proportion * 100, 1), "%"), "")),
+      ggplot2::aes(label = ifelse(proportion > 0.06,
+                                  paste0(round(proportion * 100, 0), "%"), "")),
       position = ggplot2::position_stack(vjust = 0.5),
-      color = "white", size = 3
+      color = "white", size = 3.2, fontface = "bold"
     ) +
     ggplot2::scale_fill_manual(values = color_map,
                                breaks = c(non_grey_levels, "Other isoforms")) +
     ggplot2::labs(
-      title = paste0('Isoform Proportions for \u201c', gene,
-                     '\u201d (', length(top_isoforms), ' selected isoforms shown)'),
+      title = paste0("Isoform proportions \u2014 ", gene),
       fill  = "Isoform"
     ) +
-    ggplot2::theme_void(base_size = 14) +
+    ggplot2::theme_void(base_size = 13) +
     ggplot2::theme(
-      plot.title      = ggplot2::element_text(hjust = 0.5, face = "bold", size = 16),
-      strip.text      = ggplot2::element_text(size = 10, face = "bold", vjust = 0.5),
+      plot.title      = ggplot2::element_text(hjust = 0.5, face = "bold", size = 14,
+                                              margin = ggplot2::margin(b = 10)),
+      strip.text      = ggplot2::element_text(size = 9.5, color = "#444444", vjust = 0.5),
       strip.placement = "outside",
       legend.position = "right",
-      legend.title    = ggplot2::element_text(size = 12, face = "bold"),
+      legend.title    = ggplot2::element_text(size = 11, face = "bold"),
       legend.text     = ggplot2::element_text(size = 9),
-      panel.spacing.x = ggplot2::unit(1, "lines"),
-      panel.spacing.y = ggplot2::unit(1, "lines"),
-      plot.margin     = ggplot2::margin(10, 10, 10, 10)
+      legend.key.size = ggplot2::unit(0.9, "lines"),
+      panel.spacing.x = ggplot2::unit(1.2, "lines"),
+      panel.spacing.y = ggplot2::unit(1.2, "lines"),
+      plot.margin     = ggplot2::margin(12, 12, 12, 12),
+      plot.background = ggplot2::element_rect(fill = "white", color = NA)
     )
 }
 
