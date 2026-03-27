@@ -36,7 +36,7 @@ ui <- fluidPage(
     }
     .sidebar-section .form-group { margin-bottom: 6px; }
     .sidebar-section-label {
-      font-size: 11px;
+      font-size: 12.5px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
@@ -45,24 +45,24 @@ ui <- fluidPage(
     }
     .sidebar-section-label .fa, .sidebar-section-label .glyphicon { margin-right: 4px; }
     .chip-panel-title {
-      font-size: 12px;
-      font-weight: bold;
-      color: #555;
+      font-size: 11px;
+      font-weight: 700;
+      color: #3d8b6e;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.06em;
       margin-bottom: 8px;
     }
     .input-label-row {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       margin-bottom: 2px;
     }
     .input-label-row label {
       margin: 0;
       font-size: 13px;
       font-weight: 500;
-      color: #333;
+      color: #444;
     }
     .chip-info-icon {
       display: inline-flex;
@@ -75,12 +75,13 @@ ui <- fluidPage(
       color: #fff;
       font-size: 10px;
       font-weight: 700;
-      font-style: normal;
-      font-family: sans-serif;
+      font-style: italic;
+      font-family: serif;
       cursor: help;
       line-height: 1;
       opacity: 0.7;
       flex-shrink: 0;
+      transition: opacity 0.15s ease, background 0.15s ease;
     }
     .chip-info-icon:hover { opacity: 1; background: #3d8b6e; }
     .iso-chip {
@@ -382,23 +383,23 @@ ui <- fluidPage(
       font-weight: 600; padding: 2px 8px; border-radius: 12px;
       vertical-align: middle; margin-left: 8px; letter-spacing: 0.03em;
     }
-    .tut-section p  { color: #444; line-height: 1.7; font-size: 13.5px; margin-bottom: 8px; }
-    .tut-section ul { color: #444; line-height: 1.85; font-size: 13.5px; padding-left: 18px; margin-bottom: 8px; }
-    .tut-section li { margin-bottom: 3px; }
+    .tut-section p  { color: #444; line-height: 1.75; font-size: 14.5px; margin-bottom: 10px; }
+    .tut-section ul { color: #444; line-height: 1.9; font-size: 14.5px; padding-left: 20px; margin-bottom: 10px; }
+    .tut-section li { margin-bottom: 5px; }
     .tut-note {
       background: #eaf6f2; border-left: 4px solid #3d8b6e; border-radius: 0 6px 6px 0;
-      padding: 9px 13px; margin: 12px 0; font-size: 13px; color: #2c5444;
+      padding: 10px 14px; margin: 14px 0; font-size: 13.5px; color: #2c5444; line-height: 1.65;
     }
     .tut-warn {
       background: #fff8e1; border-left: 4px solid #f0ad4e; border-radius: 0 6px 6px 0;
-      padding: 9px 13px; margin: 12px 0; font-size: 13px; color: #7a5c00;
+      padding: 10px 14px; margin: 14px 0; font-size: 13.5px; color: #7a5c00; line-height: 1.65;
     }
     .tut-screenshot {
       border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.12);
       border: 1px solid #dee2e6; max-width: 100%; height: auto; display: block;
     }
     .tut-screenshot-cap {
-      font-size: 12px; color: #888; text-align: center; margin-top: 7px; font-style: italic;
+      font-size: 12.5px; color: #666; text-align: center; margin-top: 8px; font-style: italic; line-height: 1.4;
     }
     .tut-screenshot-pair { display: flex; gap: 10px; margin-bottom: 10px; }
     .tut-screenshot-pair > div { flex: 1; }
@@ -482,6 +483,16 @@ ui <- fluidPage(
       cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
     }
     #pie-settings-toggle:hover { background: #e9ecef; color: #337ab7; border-color: #337ab7; }
+    #coexpr-settings-panel, #traj-settings-panel {
+      background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px;
+      padding: 8px 12px; margin-bottom: 8px;
+    }
+    .settings-gear-btn {
+      font-size: 12px; padding: 3px 10px; color: #555;
+      border: 1px solid #ccc; border-radius: 5px; background: #fff;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+    }
+    .settings-gear-btn:hover { background: #e9ecef; color: #337ab7; border-color: #337ab7; }
 
     /* ── Input helper text ──────────────────────────────────────────────── */
     .input-helper-text {
@@ -732,7 +743,7 @@ ui <- fluidPage(
     ),
 
     # ── Section label ─────────────────────────────────────────────────────
-    div(id = "visualisations", class = "tut-divider", "Visualisation Tabs — Example Outputs (VIM, Demo Dataset)"),
+    div(id = "visualisations", class = "tut-divider", "Visualisation Tabs — Example Outputs from the Demo Dataset"),
 
     # ── Tab 1: Overview ───────────────────────────────────────────────────
     div(class = "tut-section",
@@ -744,26 +755,16 @@ ui <- fluidPage(
           tags$ul(
             tags$li("Select a ", tags$strong("dimensional reduction"), " (e.g. UMAP, PCA) in the sidebar."),
             tags$li("Choose a ", tags$strong("metadata column"), " to colour cells by (cluster, cell type, condition)."),
-            tags$li("Hit ", tags$strong("GO"), " to generate all plots — the same button updates every tab."),
-            tags$li("Toggle ", tags$strong("Viridis"), " on the Gene Expression feature plot for a perceptually-uniform, print-safe colour scale.")
+            tags$li("Hit ", tags$strong("GO"), " to generate all plots — the same button updates every tab.")
           ),
           div(class = "tut-note",
             tags$strong("Quick start:"), " Click ", tags$strong("Demo Data"), " on the landing page to load the built-in dataset, then press GO."
           )
         ),
         div(class = "tut-img",
-          div(class = "tut-screenshot-pair",
-            div(
-              tags$img(src = "example_images/01_umap_clusters.png", class = "tut-screenshot"),
-              tags$p(class = "tut-screenshot-cap", "UMAP — Seurat clusters")
-            ),
-            div(
-              tags$img(src = "example_images/02_vim_feature_plot.png", class = "tut-screenshot"),
-              tags$p(class = "tut-screenshot-cap", "VIM gene expression on UMAP")
-            )
-          ),
-          tags$img(src = "example_images/03_vim_violin.png", class = "tut-screenshot", style = "width:100%;"),
-          tags$p(class = "tut-screenshot-cap", "Violin plot — VIM gene expression by cluster")
+          tags$img(src = "example_images/01_overview_stack.png?v=202603270900", class = "tut-screenshot",
+            style = "width:100%;"),
+          tags$p(class = "tut-screenshot-cap", "Cell type UMAP (top) and VIM gene expression feature plot (bottom)")
         )
       )
     ),
@@ -785,10 +786,10 @@ ui <- fluidPage(
           )
         ),
         div(class = "tut-img",
-          tags$img(src = "example_images/10_chip_selector.png", class = "tut-screenshot",
+          tags$img(src = "example_images/10_chip_selector.png?v=202603270442", class = "tut-screenshot",
                    style = "width:100%; margin-bottom: 14px;"),
           tags$p(class = "tut-screenshot-cap", "Isoform chip selector — click chips to toggle isoforms on/off"),
-          tags$img(src = "example_images/09_isoform_table.png", class = "tut-screenshot",
+          tags$img(src = "example_images/09_isoform_table.png?v=202603270442", class = "tut-screenshot",
                    style = "width:100%;"),
           tags$p(class = "tut-screenshot-cap", "Isoform Statistics table — VIM isoforms with expression metrics")
         )
@@ -800,13 +801,10 @@ ui <- fluidPage(
       div(class = "tut-section-inner",
         div(class = "tut-text",
           tags$h2(span(class="tut-step-badge","3"), "Isoform Expression",
-                  HTML('<span class="tut-tab-badge">Expression Maps tab</span>')),
+                  HTML('<span class="tut-tab-badge">Isoform Expression tab</span>')),
           tags$p("Single-cell resolution plots for each selected isoform: a feature plot projected onto the isoform-level UMAP embedding and a violin plot across groups."),
           tags$ul(
             tags$li(tags$strong("Feature plots"), " use the isoform-level UMAP (", tags$code("umap_iso"), ") if present, otherwise the gene-level UMAP."),
-            tags$li(tags$strong("Violin plots"), " show expression per isoform, grouped by your chosen metadata column."),
-            tags$li(tags$strong("Dot plot"), " labels show ENST IDs only (gene symbol stripped) for a cleaner display."),
-            tags$li("Toggle ", tags$strong("Viridis"), " above the feature plots for a perceptually-uniform colour scale."),
             tags$li("Only isoforms selected via the chip panel are shown.")
           ),
           div(class = "tut-warn",
@@ -814,7 +812,7 @@ ui <- fluidPage(
           )
         ),
         div(class = "tut-img",
-          tags$img(src = "example_images/04_vim_isoform_feature.png", class = "tut-screenshot"),
+          tags$img(src = "example_images/04_vim_isoform_feature.png?v=202603270522", class = "tut-screenshot", style = "max-height:270px; width:auto; display:block; margin:0 auto;"),
           tags$p(class = "tut-screenshot-cap", "VIM isoforms ENST00000224237 and ENST00000487938 on isoform UMAP")
         )
       )
@@ -837,7 +835,7 @@ ui <- fluidPage(
           )
         ),
         div(class = "tut-img",
-          tags$img(src = "example_images/05_vim_transcript_structure.png", class = "tut-screenshot"),
+          tags$img(src = "example_images/05_vim_transcript_structure.png?v=202603270442", class = "tut-screenshot"),
           tags$p(class = "tut-screenshot-cap", "Exon-intron structure of all four VIM isoforms")
         )
       )
@@ -857,7 +855,7 @@ ui <- fluidPage(
           )
         ),
         div(class = "tut-img",
-          tags$img(src = "example_images/06_vim_pseudobulk_heatmap.png", class = "tut-screenshot"),
+          tags$img(src = "example_images/06_vim_pseudobulk_heatmap.png?v=202603270522", class = "tut-screenshot"),
           tags$p(class = "tut-screenshot-cap", "VIM isoform pseudobulk expression (log CPM+1) across clusters")
         )
       )
@@ -880,8 +878,8 @@ ui <- fluidPage(
           )
         ),
         div(class = "tut-img",
-          tags$img(src = "example_images/07_vim_isoform_pie.png", class = "tut-screenshot"),
-          tags$p(class = "tut-screenshot-cap", "VIM isoform proportions across clusters")
+          tags$img(src = "example_images/07_isoform_pie_rbfox1.png?v=202603270900", class = "tut-screenshot", style = "width:100%;"),
+          tags$p(class = "tut-screenshot-cap", "RBFOX1 isoform proportions in Glutamatergic neurons — each slice shows the fraction of total gene expression contributed by each isoform")
         )
       )
     ),
@@ -903,8 +901,8 @@ ui <- fluidPage(
           )
         ),
         div(class = "tut-img",
-          tags$img(src = "example_images/08_vim_trajectory.png", class = "tut-screenshot"),
-          tags$p(class = "tut-screenshot-cap", "VIM isoform expression trajectory across clusters 0 \u2192 7")
+          tags$img(src = "example_images/08_trajectory_wide.png?v=202603270900", class = "tut-screenshot", style = "width:100%;"),
+          tags$p(class = "tut-screenshot-cap", "VIM isoform expression trajectory across cell types — loess smooth with 95% confidence ribbon per isoform")
         )
       )
     ),
@@ -915,21 +913,27 @@ ui <- fluidPage(
         div(class = "tut-text",
           tags$h2(span(class="tut-step-badge","8"), "Compare Two Isoforms",
                   HTML('<span class="tut-tab-badge">Compare Two Isoforms tab</span>')),
-          tags$p("Directly compare the expression of any two isoforms (within or across genes) at single-cell resolution, using two complementary views."),
+          tags$p("Directly compare the expression of any two isoforms (or genes) at single-cell resolution across three complementary views:"),
           tags$ul(
-            tags$li(tags$strong("Scatter plot:"), " each cell is a point — X = isoform 1 expression, Y = isoform 2 expression. Colour cells by any metadata column."),
-            tags$li(tags$strong("Co-expression feature map:"), " isoform expression projected onto the UMAP side-by-side, or as a categorical overlay (", tags$strong("Categorical view"), " toggle)."),
-            tags$li("Categorical view classifies every cell as: ", tags$strong("Both"), " (both expressed), ", tags$strong("Only X"), ", ", tags$strong("Only Y"), ", or ", tags$strong("Neither"), " — ideal for mutual-exclusivity analysis."),
-            tags$li("Use ", tags$strong("Include zero-expression cells"), " to show or hide double-zero cells in the scatter.")
+            tags$li(tags$strong("Blend:"), " a Seurat-style UMAP blend — one isoform in red, the other in blue, co-expressing cells in purple. Works across genes (e.g. TBR1 vs MAPT) or within a gene. Toggle between ", tags$strong("Isoforms"), " and ", tags$strong("Genes"), " using the Compare selector."),
+            tags$li(tags$strong("Scatter:"), " each cell is a dot — X axis = isoform 1 expression, Y axis = isoform 2 expression. Includes a linear fit, R², and optional marginal distributions. Switch between isoform or gene-level comparison."),
+            tags$li(tags$strong("Feature Map:"), " a categorical UMAP classifying every cell as ",
+              tags$strong("Both"), " (co-expressed), ",
+              tags$strong("Only X"), ", ",
+              tags$strong("Only Y"), ", or ",
+              tags$strong("Neither"), " — ideal for mutual-exclusivity analysis.")
           ),
           div(class = "tut-note",
-            tags$strong("Download:"), " Both views support the full download modal — choose PNG, PDF, or JPEG at any resolution."
+            tags$strong("Tip:"), " Use the ", tags$strong("Show cells"), " filter to restrict comparisons to specific cell groups. All views support the full download modal (PNG, PDF, JPEG)."
           )
         ),
         div(class = "tut-img",
-          tags$img(src = "example_images/11_compare_coexpr.png", class = "tut-screenshot",
-                   style = "width:100%;"),
-          tags$p(class = "tut-screenshot-cap", "Categorical co-expression: TBR1 vs VIM dominant isoforms on isoform UMAP")
+          tags$img(src = "example_images/12_isoform_blend_tbr1_mapt.png?v=202603270900", class = "tut-screenshot",
+                   style = "width:100%; margin-bottom:10px;"),
+          tags$p(class = "tut-screenshot-cap", "Blend view — dominant isoforms of TBR1 (red) vs MAPT (blue) on the UMAP; purple cells co-express both"),
+          tags$img(src = "example_images/13_isoform_coexpr_categorical.png?v=202603270800", class = "tut-screenshot",
+                   style = "width:100%; margin-top:14px;"),
+          tags$p(class = "tut-screenshot-cap", "Feature Map view — categorical co-expression: cells classified by which isoform(s) they express")
         )
       )
     ),
@@ -940,16 +944,14 @@ ui <- fluidPage(
       div(class = "tut-data-cards",
         div(class = "tut-data-card",
           tags$h4("Seurat Object (.rds / .qs / .qs2)"),
-          tags$p(style = "margin-bottom:8px;",
-            "Built with the ", tags$strong("FLAMES pipeline"), ", which quantifies both gene and isoform expression from long-read single-cell data. The resulting Seurat object contains:"),
           tags$ul(
-            tags$li("A ", tags$strong("gene-level assay"), " (e.g. ", tags$code("RNA"), ") with standard gene counts."),
-            tags$li("An ", tags$strong("isoform-level assay"), " (e.g. ", tags$code("iso"), ") where each feature is a transcript (e.g. ", tags$code("ENST00000544301.7-VIM"), ")."),
-            tags$li("At least one ", tags$strong("dimensional reduction"), " (UMAP, PCA, or isoform-level UMAP)."),
-            tags$li("A ", tags$strong("metadata column"), " for cell grouping (cluster ID, cell type, condition).")
+            tags$li("Must contain a gene assay (e.g. ", tags$code("RNA"), ") and an isoform assay (e.g. ", tags$code("iso"), ")."),
+            tags$li("Isoform IDs must follow ", tags$code("ENST00000XXXXX.X-GENENAME"), " — the gene suffix must match gene assay names (e.g. ", tags$code("ENST00000544301.7-VIM"), " ↔ ", tags$code("VIM"), ")."),
+            tags$li("Requires at least one dimensional reduction (UMAP, PCA)."),
+            tags$li("Metadata must include a column for cell grouping.")
           ),
           div(class = "tut-note",
-            HTML('Follow the <a href="https://sefi196.github.io/FLAMESv2_LR_sc_tutorial/" target="_blank">FLAMESv2 tutorial</a> to generate a compatible object from raw long-read FASTQ files.')
+            HTML('See the <a class="btn-wf-primary" style="background:#3d8b6e; font-size:12px; padding:5px 12px;" href="https://sefi196.github.io/FLAMESv2_LR_sc_tutorial/" target="_blank">&#128218; FLAMESv2 Tutorial</a> for generating compatible objects.')
           )
         ),
         div(class = "tut-data-card",
@@ -1124,6 +1126,20 @@ conda activate LongViewSC_env</div>'),
         icon.toggleClass("fa-cog fa-times");
       });
 
+      // ── Co-expression settings gear toggle ────────────────────────────────
+      $(document).on("click", "#coexpr-settings-toggle", function() {
+        $("#coexpr-settings-panel").slideToggle(150);
+        var icon = $(this).find("i");
+        icon.toggleClass("fa-cog fa-times");
+      });
+
+      // ── Trajectory settings gear toggle ───────────────────────────────────
+      $(document).on("click", "#traj-settings-toggle", function() {
+        $("#traj-settings-panel").slideToggle(150);
+        var icon = $(this).find("i");
+        icon.toggleClass("fa-cog fa-times");
+      });
+
       // ── Toast notification handler ────────────────────────────────────────
       Shiny.addCustomMessageHandler("lvsc_toast", function(msg) {
         var $t = $("#lvsc-toast");
@@ -1189,6 +1205,17 @@ conda activate LongViewSC_env</div>'),
                                           tabindex = "0", "i")
                        ),
                        selectInput("isoform_assay", NULL, choices = NULL),
+
+                       # Gene Assay
+                       tags$div(class = "input-label-row",
+                                tags$label("Gene Assay", `for` = "gene_assay"),
+                                tags$span(class = "chip-info-icon",
+                                          `data-toggle` = "popover", `data-trigger` = "hover focus",
+                                          `data-placement` = "right",
+                                          `data-content` = "The Seurat assay containing gene-level expression data (e.g. RNA). Must differ from the Isoform Assay.",
+                                          tabindex = "0", "i")
+                       ),
+                       selectInput("gene_assay", NULL, choices = NULL),
 
                        # Metadata Column
                        tags$div(class = "input-label-row",
@@ -1468,8 +1495,8 @@ conda activate LongViewSC_env</div>'),
                                             )
                                         ),
                                         div(id = "pie-settings-panel", style = "display:block;",
-                                            div(style = "display:flex; align-items:center; gap:24px; flex-wrap:wrap; margin-bottom:4px;",
-                                                div(
+                                            div(style = "display:flex; align-items:flex-start; gap:24px; flex-wrap:wrap; margin-bottom:4px;",
+                                                conditionalPanel("input.pie_display_mode !== 'bar'",
                                                   tags$label("Columns per row",
                                                              style = "font-size:13px; font-weight:500; display:block; margin-bottom:2px;"),
                                                   numericInput("pie_ncol", NULL, value = 4, min = 1, max = 10, step = 1, width = "90px")
@@ -1479,7 +1506,7 @@ conda activate LongViewSC_env</div>'),
                                                              style = "font-size:13px; font-weight:500; display:block; margin-bottom:2px;"),
                                                   numericInput("pie_min_counts", NULL, value = 10, min = 0, step = 1, width = "90px")
                                                 ),
-                                                div(style = "margin-bottom:1px;",
+                                                div(
                                                   tags$label("Display mode",
                                                              style = "font-size:13px; font-weight:500; display:block; margin-bottom:2px;"),
                                                   shinyWidgets::radioGroupButtons(
@@ -1489,6 +1516,30 @@ conda activate LongViewSC_env</div>'),
                                                     selected = "proportion",
                                                     size     = "sm",
                                                     status   = "default"
+                                                  )
+                                                ),
+                                                div(style = "min-width:200px; flex:1;",
+                                                  div(class = "input-label-row",
+                                                    tags$label("Show groups", style = "font-size:13px; font-weight:500; display:block; margin-bottom:2px; margin-right:4px;"),
+                                                    tags$span(class = "chip-info-icon",
+                                                      `data-toggle` = "popover", `data-trigger` = "hover focus",
+                                                      `data-placement` = "right",
+                                                      `data-content` = "Choose which cell groups to include in the proportions plot. Groups come from the Metadata Column selected in the sidebar.",
+                                                      tabindex = "0", "i")
+                                                  ),
+                                                  shinyWidgets::pickerInput(
+                                                    inputId  = "pie_cells_filter",
+                                                    label    = NULL,
+                                                    choices  = NULL,
+                                                    multiple = TRUE,
+                                                    options  = shinyWidgets::pickerOptions(
+                                                      actionsBox         = TRUE,
+                                                      selectedTextFormat = "count > 2",
+                                                      countSelectedText  = "{0} groups selected",
+                                                      liveSearch         = FALSE,
+                                                      size               = 8
+                                                    ),
+                                                    width = "100%"
                                                   )
                                                 )
                                             )
@@ -1521,9 +1572,17 @@ conda activate LongViewSC_env</div>'),
                       # ── Tab 6: Trajectory ─────────────────────────────────────
                       tabPanel("Trajectory",
 
-                               # ── Row 1: settings (scatter-style top row) ───────
+                               # ── Settings toggle ───────────────────────────────
                                fluidRow(
-                                 column(4,
+                                 column(12,
+                                   div(style = "display:flex; justify-content:flex-end; padding: 4px 4px 0; margin-bottom:4px;",
+                                     tags$button(id = "traj-settings-toggle", class = "settings-gear-btn",
+                                       `aria-label` = "Toggle trajectory settings",
+                                       tags$i(class = "fa fa-cog", style = "margin-right:4px;"), "Plot Settings")
+                                   ),
+                                   div(id = "traj-settings-panel", style = "display:block;",
+                                     fluidRow(
+                                       column(4,
                                    div(class = "sidebar-section",
                                      div(class = "input-label-row",
                                        p(class = "sidebar-section-label", style = "margin:0;",
@@ -1556,12 +1615,15 @@ conda activate LongViewSC_env</div>'),
                                      p(class = "sidebar-section-label",
                                        icon("info-circle"), " How it works"),
                                      tags$ul(style = "font-size:13px; color:#444; padding-left:16px; margin:0;",
-                                       tags$li("Select a gene and press ", tags$strong("GO"), " in the sidebar first."),
-                                       tags$li("Each dot is a single cell, coloured by cell type."),
-                                       tags$li("The curved line shows the smoothed expression trend across the ordered cell states."),
-                                       tags$li("Use ", tags$strong("Proportions"), " to see which isoform dominates; use Trajectory to see ", tags$em("when"), " it changes.")
+                                       tags$li("Type a gene and press ", tags$strong("Run Analysis"), " in the sidebar."),
+                                       tags$li("Select which cell types to include, then drag them into order left-to-right."),
+                                       tags$li("Each dot is a single cell; the curved line is a loess smooth showing the expression trend across the ordered groups."),
+                                       tags$li("Each isoform gets its own panel — compare the shapes to see when isoform usage shifts along the trajectory.")
                                      )
                                    )
+                                 )
+                                     )
+                                   ) # end traj-settings-panel div
                                  )
                                ),
 
@@ -1613,7 +1675,7 @@ conda activate LongViewSC_env</div>'),
                                          `data-content` = "When on, all isoform panels share the same Y axis range, making expression levels directly comparable across isoforms.",
                                          tabindex = "0", "i")
                                      ),
-                                     shinycssloaders::withSpinner(plotOutput("trajectory_plot", height = "500px"), type=4, color="#337ab7", size=0.7),
+                                     shinycssloaders::withSpinner(plotOutput("trajectory_plot", height = "650px"), type=4, color="#337ab7", size=0.7),
                                      div(style = "text-align:right; padding-right:10px; margin-top:4px;",
                                        actionButton("trajectory_plot-download_trajectory_plot",
                                                     "Download", icon = icon("download"),
@@ -1629,16 +1691,26 @@ conda activate LongViewSC_env</div>'),
                       # ── Tab: Compare Two Isoforms ────────────────────────────
                       tabPanel("Compare Two Isoforms",
                         fluidRow(
-                          # ── Isoform X selector ──
-                          column(4,
+                          column(12,
+                            div(style = "display:flex; justify-content:flex-end; padding: 4px 4px 0; margin-bottom:4px;",
+                              tags$button(id = "coexpr-settings-toggle", class = "settings-gear-btn",
+                                `aria-label` = "Toggle plot settings",
+                                tags$i(class = "fa fa-cog", style = "margin-right:4px;"), "Plot Settings")
+                            ),
+                            div(id = "coexpr-settings-panel", style = "display:block;",
+                              fluidRow(
+                                # ── Isoform X selector ──
+                                column(4,
                             div(class = "sidebar-section",
-                              tags$span(class = "chip-info-icon",
-                                style = "position:absolute; top:8px; right:8px;",
-                                `data-toggle` = "popover", `data-trigger` = "hover focus",
-                                `data-placement` = "right",
-                                `data-content` = "Select a gene, then choose which isoform to plot on the X axis. Isoforms are filtered to those present in the isoform assay. Format: TranscriptID-GeneName.",
-                                tabindex = "0", "i"),
-                              selectizeInput("scatter_gene_x", "Gene X",
+                              div(class = "input-label-row",
+                                p(class = "sidebar-section-label", style = "margin:0;", "Gene X"),
+                                tags$span(class = "chip-info-icon",
+                                  `data-toggle` = "popover", `data-trigger` = "hover focus",
+                                  `data-placement` = "right",
+                                  `data-content` = "Select a gene, then choose which isoform to plot on the X axis. Isoforms are filtered to those present in the isoform assay. Format: TranscriptID-GeneName.",
+                                  tabindex = "0", "i")
+                              ),
+                              selectizeInput("scatter_gene_x", NULL,
                                 choices = NULL, options = list(placeholder = "Type gene name…")),
                               selectInput("scatter_iso_x", "Isoform X",
                                 choices = NULL, width = "100%")
@@ -1647,13 +1719,15 @@ conda activate LongViewSC_env</div>'),
                           # ── Isoform Y selector ──
                           column(4,
                             div(class = "sidebar-section",
-                              tags$span(class = "chip-info-icon",
-                                style = "position:absolute; top:8px; right:8px;",
-                                `data-toggle` = "popover", `data-trigger` = "hover focus",
-                                `data-placement` = "right",
-                                `data-content` = "Select a gene, then choose which isoform to plot on the Y axis. The gene can be the same as Gene X to compare isoforms within a gene. Format: TranscriptID-GeneName.",
-                                tabindex = "0", "i"),
-                              selectizeInput("scatter_gene_y", "Gene Y",
+                              div(class = "input-label-row",
+                                p(class = "sidebar-section-label", style = "margin:0;", "Gene Y"),
+                                tags$span(class = "chip-info-icon",
+                                  `data-toggle` = "popover", `data-trigger` = "hover focus",
+                                  `data-placement` = "right",
+                                  `data-content` = "Select a gene, then choose which isoform to plot on the Y axis. The gene can be the same as Gene X to compare isoforms within a gene. Format: TranscriptID-GeneName.",
+                                  tabindex = "0", "i")
+                              ),
+                              selectizeInput("scatter_gene_y", NULL,
                                 choices = NULL, options = list(placeholder = "Type gene name…")),
                               selectInput("scatter_iso_y", "Isoform Y",
                                 choices = NULL, width = "100%")
@@ -1668,54 +1742,68 @@ conda activate LongViewSC_env</div>'),
                                 shinyWidgets::radioGroupButtons(
                                   inputId  = "compare_view",
                                   label    = NULL,
-                                  choices  = c("Scatter" = "scatter", "Feature Map" = "feature"),
-                                  selected = "scatter",
+                                  choices  = c("Blend" = "blend", "Scatter" = "scatter", "Feature Map" = "feature"),
+                                  selected = "blend",
                                   size     = "sm",
                                   status   = "default",
                                   width    = "100%"
                                 )
                               ),
-                              # Scatter-only options
-                              conditionalPanel("input.compare_view === 'scatter'",
-                                div(class = "input-label-row",
-                                  tags$label("Colour cells by", style = "font-size:13px; font-weight:500; color:#333; margin:0;"),
-                                  tags$span(class = "chip-info-icon",
-                                    `data-toggle` = "popover", `data-trigger` = "hover focus",
-                                    `data-placement` = "right",
-                                    `data-content` = "Colour each cell dot by a categorical metadata column (e.g. cluster, cell type). Only categorical columns are shown. Updates immediately without re-pressing Plot.",
-                                    tabindex = "0", "i")
-                                ),
-                                selectInput("scatter_group_colour", label = NULL,
-                                  choices = NULL, width = "100%"),
-                                div(class = "input-label-row",
-                                  checkboxInput("scatter_zero_cells",
-                                    "Include zero-expression cells", value = FALSE),
-                                  tags$span(class = "chip-info-icon",
-                                    `data-toggle` = "popover", `data-trigger` = "hover focus",
-                                    `data-placement` = "right",
-                                    `data-content` = "When unchecked, cells where both isoforms have zero expression are excluded. This reduces overplotting at the origin. Updates immediately.",
-                                    tabindex = "0", "i")
+                              # Blend / Scatter: compare genes or isoforms
+                              conditionalPanel("input.compare_view === 'blend' || input.compare_view === 'scatter'",
+                                div(style = "margin-bottom:10px;",
+                                  tags$label("Compare", style = "font-size:13px; font-weight:500; color:#444; display:block; margin-bottom:4px;"),
+                                  conditionalPanel("input.compare_view === 'blend'",
+                                    shinyWidgets::radioGroupButtons(
+                                      inputId  = "blend_compare_type",
+                                      label    = NULL,
+                                      choices  = c("Isoforms" = "isoform", "Genes" = "gene"),
+                                      selected = "isoform",
+                                      size     = "sm",
+                                      status   = "default",
+                                      width    = "100%"
+                                    )
+                                  ),
+                                  conditionalPanel("input.compare_view === 'scatter'",
+                                    shinyWidgets::radioGroupButtons(
+                                      inputId  = "scatter_compare_type",
+                                      label    = NULL,
+                                      choices  = c("Isoforms" = "isoform", "Genes" = "gene"),
+                                      selected = "isoform",
+                                      size     = "sm",
+                                      status   = "default",
+                                      width    = "100%"
+                                    )
+                                  )
                                 )
                               ),
-                              # Feature map options
-                              conditionalPanel("input.compare_view === 'feature'",
-                                tags$p(style = "font-size:12px; color:#666; margin-bottom:8px;",
-                                  "Expression capped at 99th percentile per feature."),
-                                div(style = "margin-top:8px;",
-                                  shinyWidgets::materialSwitch(
-                                    inputId = "coexpr_viridis",
-                                    label   = "Categorical view",
-                                    value   = FALSE,
-                                    status  = "primary",
-                                    inline  = TRUE
-                                  )
+                              # Cell filter — shown for both scatter and feature views
+                              div(class = "input-label-row",
+                                tags$label("Show cells", style = "font-size:13px; font-weight:500; color:#444; margin:0;"),
+                                tags$span(class = "chip-info-icon",
+                                  `data-toggle` = "popover", `data-trigger` = "hover focus",
+                                  `data-placement` = "right",
+                                  `data-content` = "Choose which cell groups to include. Groups come from the Metadata Column selected in the sidebar. Cells are coloured by that column automatically.",
+                                  tabindex = "0", "i")
+                              ),
+                              shinyWidgets::pickerInput(
+                                inputId  = "scatter_cells_filter",
+                                label    = NULL,
+                                choices  = NULL,
+                                multiple = TRUE,
+                                options  = shinyWidgets::pickerOptions(
+                                  actionsBox         = TRUE,
+                                  selectedTextFormat = "count > 2",
+                                  countSelectedText  = "{0} groups selected",
+                                  liveSearch         = FALSE,
+                                  size               = 8
                                 ),
-                                conditionalPanel("input.coexpr_viridis",
-                                  tags$p(style = "font-size:11px; margin-top:4px; margin-bottom:0;",
-                                    HTML('<span style="color:#e6b800;">&#9632;</span> Both &nbsp; <span style="color:#2e5ba8;">&#9632;</span> Only X &nbsp; <span style="color:#b83232;">&#9632;</span> Only Y &nbsp; <span style="color:#d0d0d0;">&#9632;</span> Neither'))
-                                )
+                                width = "100%"
                               )
                             )
+                          )
+                              ) # end inner fluidRow
+                            ) # end coexpr-settings-panel
                           )
                         ),
                         fluidRow(
@@ -1731,6 +1819,26 @@ conda activate LongViewSC_env</div>'),
                                     `data-content` = "Each dot is a single cell. The orange line is a linear fit with 95% confidence band. R\u00b2 measures correlation strength. Marginal histograms + density curves show the expression distribution along each axis. Select both isoforms and press Plot to run.",
                                     tabindex = "0", "i")
                                 ),
+                                div(style = "display:flex; align-items:center; gap:18px; justify-content:flex-end; margin-bottom:8px;",
+                                  div(style = "display:flex; align-items:center; gap:5px;",
+                                    shinyWidgets::materialSwitch("scatter_zero_cells",
+                                      "Include zeros", value = FALSE, status = "success", inline = TRUE),
+                                    tags$span(class = "chip-info-icon",
+                                      `data-toggle` = "popover", `data-trigger` = "hover focus",
+                                      `data-placement` = "left",
+                                      `data-content` = "When off, cells where both isoforms have zero expression are excluded. This reduces overplotting at the origin.",
+                                      tabindex = "0", "i")
+                                  ),
+                                  div(style = "display:flex; align-items:center; gap:5px;",
+                                    shinyWidgets::materialSwitch("scatter_show_marginal",
+                                      "Show distributions", value = TRUE, status = "success", inline = TRUE),
+                                    tags$span(class = "chip-info-icon",
+                                      `data-toggle` = "popover", `data-trigger` = "hover focus",
+                                      `data-placement` = "left",
+                                      `data-content` = "Toggle the histogram and density plots on the top and right margins of the scatter plot.",
+                                      tabindex = "0", "i")
+                                  )
+                                ),
                                 plotOutput("scatter_plot", height = "600px"),
                                 div(style = "text-align:right; padding-right:10px; margin-top:4px;",
                                   actionButton("scatter_plot-download_scatter_plot", "Download",
@@ -1743,7 +1851,24 @@ conda activate LongViewSC_env</div>'),
                                   style = "display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:10px;",
                                   h3(class = "plot-title", style = "margin:0;", "Isoform Feature Maps")
                                 ),
-                                plotOutput("compare_feature_plot", height = "480px"),
+                                div(style = "display:flex; align-items:center; gap:18px; justify-content:flex-end; margin-bottom:8px;",
+                                  tags$p(style = "font-size:11px; margin:0;",
+                                    HTML('<span style="color:#e6b800;">&#9632;</span> Both &nbsp; <span style="color:#2e5ba8;">&#9632;</span> Only X &nbsp; <span style="color:#b83232;">&#9632;</span> Only Y &nbsp; <span style="color:#d0d0d0;">&#9632;</span> Neither'))
+                                )
+                              ),
+                              conditionalPanel("input.compare_view === 'blend'",
+                                tags$div(class = "plot-title-row",
+                                  style = "display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:10px;",
+                                  h3(class = "plot-title", style = "margin:0;", "Isoform Blend"),
+                                  tags$span(class = "chip-info-icon",
+                                    `data-toggle` = "popover", `data-trigger` = "hover focus",
+                                    `data-placement` = "right",
+                                    `data-content` = "Seurat blend mode: red = isoform X only, blue = isoform Y only, purple = co-expressed. Requires two different isoforms.",
+                                    tabindex = "0", "i")
+                                )
+                              ),
+                              conditionalPanel("input.compare_view === 'feature' || input.compare_view === 'blend'",
+                                shinycssloaders::withSpinner(plotOutput("compare_feature_plot", height = "500px"), type=4, color="#337ab7", size=0.7),
                                 div(style = "text-align:right; padding-right:10px; margin-top:4px;",
                                   actionButton("compare_feature_plot-download_compare_feature_plot", "Download",
                                     icon = icon("download"),

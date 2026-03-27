@@ -255,7 +255,6 @@ server <- function(input, output, session) {
     shinyjs::hide("resetBtn")
     shinyjs::show("spinner")
     
-    seurat_obj(seurat_obj_demo)
     join_and_store(seurat_obj_demo)
     gtf(gtf_obj_demo)
     update_seurat_ui()
@@ -338,7 +337,6 @@ server <- function(input, output, session) {
 
     tryCatch({
       obj <- load_seurat_object(dataset$seurat_path, basename(dataset$seurat_path))
-      seurat_obj(obj)
       join_and_store(obj)
 
       if (!is.null(dataset$gtf_path)) {
@@ -399,6 +397,10 @@ server <- function(input, output, session) {
         message("Could not join layers for assay '", assay_name, "': ", conditionMessage(e))
       })
     }
+    # Set RNA (or first gene-like assay) as default so rownames() returns gene features
+    rna_assay <- names(obj@assays)[grepl("^(RNA|GEX|Spatial)$", names(obj@assays), ignore.case = TRUE)][1]
+    if (!is.na(rna_assay)) Seurat::DefaultAssay(obj) <- rna_assay
+    seurat_obj(obj)
     seurat_joined(obj)
   }
   
@@ -407,32 +409,74 @@ server <- function(input, output, session) {
     shinyjs::toggle(id = "sidebar_panel_wrap", anim = TRUE, animType = "slide", time = 0.3)
   }, ignoreInit = TRUE)
   
+  # ── Helper: detect gene assay — prefers RNA/GEX by name, then any assay whose
+  #    features don't look like isoform IDs (ENST…). Falls back to first non-iso assay.
+  .detect_gene_assay <- function(obj, isoform_assay_name) {
+    all_assays <- names(obj@assays)
+    non_iso    <- setdiff(all_assays, isoform_assay_name)
+    if (length(non_iso) == 0) return(all_assays[1])
+    # Prefer an assay explicitly named RNA/GEX/Spatial
+    by_name <- non_iso[grepl("^(RNA|GEX|Spatial)$", non_iso, ignore.case = TRUE)][1]
+    if (!is.na(by_name)) return(by_name)
+    # Otherwise pick the non-iso assay whose features least resemble ENST IDs
+    for (a in non_iso) {
+      feats <- tryCatch(rownames(obj@assays[[a]]), error = function(e) character(0))
+      if (length(feats) > 0 && mean(grepl("^ENST", feats)) < 0.5) return(a)
+    }
+    non_iso[1]
+  }
+
   # ── Helper: update all dropdowns after any Seurat object is loaded ──────────
   update_seurat_ui <- function() {
     req(seurat_obj())
     reductions    <- names(seurat_obj()@reductions)
-    isoform_assay <- names(seurat_obj()@assays)
+    all_assays    <- names(seurat_obj()@assays)
     group_by      <- colnames(seurat_obj()@meta.data)[!vapply(seurat_obj()@meta.data, function(x) is.numeric(x) || is.list(x), logical(1))]
-    
-    default_isoform_assay <- isoform_assay[grepl("^iso(form)?$", isoform_assay, ignore.case = TRUE)][1]
-    default_group_by      <- group_by[grepl("seurat_clusters|cell.*type|annotation", group_by, ignore.case = TRUE)][1]
-    default_reduction     <- reductions[grepl("umap|tsne|iso", reductions, ignore.case = TRUE)][1]
-    
-    updateSelectInput(session, "reduction",     choices = reductions,    selected = default_reduction     %||% reductions[1])
-    updateSelectInput(session, "isoform_assay", choices = isoform_assay, selected = default_isoform_assay %||% isoform_assay[1])
-    updateSelectInput(session, "group_by",      choices = group_by,      selected = default_group_by      %||% group_by[1])
-    
-    updateSelectizeInput(session, "feature",        choices = rownames(seurat_obj()), server = TRUE)
-    # Also populate scatter tab gene dropdowns from the same gene assay
-    updateSelectizeInput(session, "scatter_gene_x", choices = rownames(seurat_obj()), server = TRUE)
-    updateSelectizeInput(session, "scatter_gene_y", choices = rownames(seurat_obj()), server = TRUE)
+
+    default_isoform_assay <- all_assays[grepl("^iso(form)?$", all_assays, ignore.case = TRUE)][1]
+    default_isoform_assay <- default_isoform_assay %||% all_assays[length(all_assays)]
+    default_gene_assay    <- .detect_gene_assay(seurat_obj(), default_isoform_assay)
+
+    # Prefer cell type over cluster for default grouping
+    cell_type_col <- group_by[grepl("cell.*type|celltype", group_by, ignore.case = TRUE)][1]
+    cluster_col   <- group_by[grepl("seurat_clusters|annotation", group_by, ignore.case = TRUE)][1]
+    default_group_by  <- cell_type_col %||% cluster_col %||% group_by[1]
+    default_reduction <- reductions[grepl("umap|tsne|iso", reductions, ignore.case = TRUE)][1]
+
+    updateSelectInput(session, "reduction",     choices = reductions,                        selected = default_reduction  %||% reductions[1])
+    updateSelectInput(session, "isoform_assay", choices = setdiff(all_assays, default_gene_assay),   selected = default_isoform_assay)
+    updateSelectInput(session, "gene_assay",    choices = setdiff(all_assays, default_isoform_assay), selected = default_gene_assay)
+    updateSelectInput(session, "group_by",      choices = group_by,                          selected = default_group_by)
+
+    gene_features <- rownames(seurat_obj()@assays[[default_gene_assay]])
+    updateSelectizeInput(session, "feature",        choices = gene_features, server = TRUE)
+    updateSelectizeInput(session, "scatter_gene_x", choices = gene_features, server = TRUE)
+    updateSelectizeInput(session, "scatter_gene_y", choices = gene_features, server = TRUE)
     shinyjs::hide("spinner")
-    
-    if (!is.null(default_isoform_assay))
-      showNotification(paste("Auto-selected assay:", default_isoform_assay), type = "message", duration = 4)
+
+    showNotification(paste("Auto-selected isoform assay:", default_isoform_assay), type = "message", duration = 4)
+    showNotification(paste("Auto-selected gene assay:", default_gene_assay),    type = "message", duration = 4)
     if (!is.null(default_group_by))
       showNotification(paste("Auto-selected metadata column:", default_group_by), type = "message", duration = 4)
   }
+
+  # ── Cross-filter: when isoform assay changes, remove it from gene assay choices
+  observeEvent(input$isoform_assay, {
+    req(seurat_obj(), input$isoform_assay)
+    all_assays <- names(seurat_obj()@assays)
+    gene_choices <- setdiff(all_assays, input$isoform_assay)
+    cur_gene <- if (input$gene_assay %in% gene_choices) input$gene_assay else gene_choices[1]
+    updateSelectInput(session, "gene_assay", choices = gene_choices, selected = cur_gene)
+  }, ignoreInit = TRUE)
+
+  # ── Cross-filter: when gene assay changes, remove it from isoform assay choices
+  observeEvent(input$gene_assay, {
+    req(seurat_obj(), input$gene_assay)
+    all_assays <- names(seurat_obj()@assays)
+    iso_choices <- setdiff(all_assays, input$gene_assay)
+    cur_iso <- if (input$isoform_assay %in% iso_choices) input$isoform_assay else iso_choices[1]
+    updateSelectInput(session, "isoform_assay", choices = iso_choices, selected = cur_iso)
+  }, ignoreInit = TRUE)
   
   # Handle Seurat object file upload (local)
   observeEvent(input$seurat_file, {
@@ -453,7 +497,6 @@ server <- function(input, output, session) {
       app_state$demo_mode <- FALSE
       rv$selected_isoform_names <- character(0)
       lastReset(input$GO)
-      seurat_obj(obj)
       join_and_store(obj)
       setProgress(0.9, detail = "Updating interface\u2026")
       update_seurat_ui()
@@ -548,8 +591,12 @@ server <- function(input, output, session) {
 
     # Ensure gene-level assay is default so FeaturePlot/VlnPlot find the gene immediately
     seu_g <- seurat_joined()
-    gene_assay_name <- setdiff(names(seu_g@assays), assay_name)[1]
-    if (!is.na(gene_assay_name)) Seurat::DefaultAssay(seu_g) <- gene_assay_name
+    gene_assay_name <- if (!is.null(input$gene_assay) && nzchar(input$gene_assay)) {
+      input$gene_assay
+    } else {
+      setdiff(names(seu_g@assays), assay_name)[1]
+    }
+    if (!is.null(gene_assay_name) && !is.na(gene_assay_name)) Seurat::DefaultAssay(seu_g) <- gene_assay_name
 
     # Friendly placeholder when gene has no isoforms in the selected assay
     if (length(matching_feats) == 0) {
@@ -716,7 +763,7 @@ server <- function(input, output, session) {
     # Relabel x-axis ticks and drop "Features" axis title
     p + scale_x_discrete(labels = feats_labels) +
       theme(
-        axis.text.x  = element_text(angle = 80, hjust = 1, size = 13, face = "bold", family = "sans"),
+        axis.text.x  = element_text(angle = 80, hjust = 1, size = 13, family = "sans"),
         axis.text.y  = element_text(size = 13, family = "sans"),
         axis.title.x = element_blank(),
         axis.title.y = element_text(size = 14, face = "bold", family = "sans"),
@@ -1044,8 +1091,16 @@ server <- function(input, output, session) {
     stripped_names <- sub("-[^-]+$", "", names(col_map))  # strip -GENENAME
     stripped_names <- sub("[.][^.]*$", "", stripped_names) # strip version
     names(col_map) <- stripped_names
+    seu_pie <- seurat_joined()
+    sel_pie <- input$pie_cells_filter
+    grp_pie <- iso_settings()$group_by
+    if (!is.null(sel_pie) && length(sel_pie) > 0 && !is.null(grp_pie) &&
+        nzchar(grp_pie) && grp_pie %in% colnames(seu_pie@meta.data)) {
+      keep_pie <- colnames(seu_pie)[as.character(seu_pie@meta.data[[grp_pie]]) %in% sel_pie]
+      if (length(keep_pie) >= 1) seu_pie <- subset(seu_pie, cells = keep_pie)
+    }
     plotIsoformPieFromSeurat(
-      seurat_obj        = seurat_joined(),
+      seurat_obj        = seu_pie,
       gene              = filtered_data()$feature,
       selected_isoforms = selected_isoforms_debounced(),
       ncol              = input$pie_ncol %||% 4L,
@@ -1472,43 +1527,78 @@ server <- function(input, output, session) {
                       selected = if (length(feats) > 0) feats[1] else NULL)
   })
 
-  # Populate categorical colour-by options when object loads
+  # Populate cell filter picker from the currently selected metadata column
   observe({
-    req(seurat_joined())
-    meta     <- seurat_joined()@meta.data
-    cat_cols <- names(meta)[vapply(meta, function(x) is.character(x) || is.factor(x), logical(1))]
-    updateSelectInput(session, "scatter_group_colour", choices = c("None", sort(cat_cols)))
+    req(seurat_joined(), input$group_by)
+    grp_vals <- sort(unique(as.character(seurat_joined()@meta.data[[input$group_by]])))
+    shinyWidgets::updatePickerInput(session, "scatter_cells_filter",
+      choices  = grp_vals,
+      selected = grp_vals
+    )
+  })
+
+  # Populate pie cell filter from the currently selected metadata column
+  observe({
+    req(seurat_joined(), input$group_by)
+    grp_vals <- sort(unique(as.character(seurat_joined()@meta.data[[input$group_by]])))
+    shinyWidgets::updatePickerInput(session, "pie_cells_filter",
+      choices  = grp_vals,
+      selected = grp_vals
+    )
   })
 
   # ── Fetch raw expression — auto-reactive (no button needed) ──────────────
   scatter_raw <- reactive({
-    req(seurat_joined(), input$scatter_iso_x, input$scatter_iso_y, input$isoform_assay)
-    assay_name <- input$isoform_assay
-    expr_mat   <- .get_expr_matrix(seurat_joined(), assay_name)
-    ix <- input$scatter_iso_x
-    iy <- input$scatter_iso_y
-    validate(
-      need(ix %in% rownames(expr_mat), paste("Isoform not found in assay:", ix)),
-      need(iy %in% rownames(expr_mat), paste("Isoform not found in assay:", iy))
-    )
+    req(seurat_joined(), input$isoform_assay)
+    scatter_type <- if (is.null(input$scatter_compare_type)) "isoform" else input$scatter_compare_type
+    if (scatter_type == "gene") {
+      req(input$scatter_gene_x, input$scatter_gene_y)
+      gene_assay <- setdiff(names(seurat_joined()@assays), input$isoform_assay)[1]
+      req(!is.na(gene_assay))
+      expr_mat <- .get_expr_matrix(seurat_joined(), gene_assay)
+      ix <- input$scatter_gene_x
+      iy <- input$scatter_gene_y
+      validate(
+        need(ix %in% rownames(expr_mat), paste("Gene not found in assay:", ix)),
+        need(iy %in% rownames(expr_mat), paste("Gene not found in assay:", iy))
+      )
+    } else {
+      req(input$scatter_iso_x, input$scatter_iso_y)
+      expr_mat <- .get_expr_matrix(seurat_joined(), input$isoform_assay)
+      ix <- input$scatter_iso_x
+      iy <- input$scatter_iso_y
+      validate(
+        need(ix %in% rownames(expr_mat), paste("Isoform not found in assay:", ix)),
+        need(iy %in% rownames(expr_mat), paste("Isoform not found in assay:", iy))
+      )
+    }
     data.frame(
+      feat_x = ix, feat_y = iy,
       expr_x = as.numeric(expr_mat[ix, ]),
       expr_y = as.numeric(expr_mat[iy, ]),
       stringsAsFactors = FALSE
     )
   })
 
-  # ── Apply colour + zero filter — reactive, instant, no spinner ──────────
+  # ── Apply colour + cell filter + zero filter ─────────────────────────────
   scatter_data <- reactive({
     req(scatter_raw())
     df         <- scatter_raw()
-    colour_col <- input$scatter_group_colour
-    if (!is.null(colour_col) && colour_col != "None" &&
+    colour_col <- input$group_by
+    if (!is.null(colour_col) && nzchar(colour_col) &&
         colour_col %in% colnames(seurat_joined()@meta.data)) {
       df$colour_by <- as.character(seurat_joined()@meta.data[[colour_col]])
     } else {
       df$colour_by <- NA_character_
     }
+    validate(
+      need(!identical(df$feat_x[1], df$feat_y[1]),
+           "Please select two different features to compare.")
+    )
+    # Filter to selected cell groups
+    sel <- input$scatter_cells_filter
+    if (!is.null(sel) && length(sel) > 0 && !all(is.na(df$colour_by)))
+      df <- df[df$colour_by %in% sel, ]
     if (!isTRUE(input$scatter_zero_cells))
       df <- df[df$expr_x > 0 | df$expr_y > 0, ]
     df
@@ -1518,8 +1608,8 @@ server <- function(input, output, session) {
   scatter_plot_obj <- reactive({
     req(scatter_data())
     df  <- scatter_data()
-    ix  <- isolate(input$scatter_iso_x)
-    iy  <- isolate(input$scatter_iso_y)
+    ix  <- df$feat_x[1]
+    iy  <- df$feat_y[1]
     validate(need(nrow(df) >= 3, "Not enough cells with expression data to plot."))
 
     lm_fit <- lm(expr_y ~ expr_x, data = df)
@@ -1539,31 +1629,40 @@ server <- function(input, output, session) {
                label = r2_lab, size = 4, fontface = "bold", colour = "#333333") +
       labs(x = paste0(ix, "  (log-normalised)"),
            y = paste0(iy, "  (log-normalised)"),
-           colour = if (has_colour) input$scatter_group_colour else NULL) +
+           colour = if (has_colour) input$group_by else NULL) +
       theme_minimal(base_size = 13) +
       theme(legend.position  = if (has_colour) "right" else "none",
             panel.grid.minor = element_blank())
 
-    p_top <- ggplot(df, aes(x = expr_x)) +
-      geom_histogram(aes(y = after_stat(density)),
-                     bins = 40, fill = "#3d8b6e", alpha = 0.35, colour = NA) +
-      geom_density(fill = "#3d8b6e", alpha = 0.25, colour = "#3d8b6e", linewidth = 0.5) +
-      theme_void() + theme(plot.margin = margin(2, 0, 2, 0))
+    if (isTRUE(input$scatter_show_marginal)) {
+      p_top <- ggplot(df, aes(x = expr_x)) +
+        geom_histogram(aes(y = after_stat(density)),
+                       bins = 40, fill = "#3d8b6e", alpha = 0.35, colour = NA) +
+        geom_density(fill = "#3d8b6e", alpha = 0.25, colour = "#3d8b6e", linewidth = 0.5) +
+        theme_void() + theme(plot.margin = margin(2, 0, 2, 0))
 
-    p_right <- ggplot(df, aes(x = expr_y)) +
-      geom_histogram(aes(y = after_stat(density)),
-                     bins = 40, fill = "#e05c2a", alpha = 0.35, colour = NA) +
-      geom_density(fill = "#e05c2a", alpha = 0.25, colour = "#e05c2a", linewidth = 0.5) +
-      coord_flip() +
-      theme_void() + theme(plot.margin = margin(0, 2, 0, 2))
+      p_right <- ggplot(df, aes(x = expr_y)) +
+        geom_histogram(aes(y = after_stat(density)),
+                       bins = 40, fill = "#e05c2a", alpha = 0.35, colour = NA) +
+        geom_density(fill = "#e05c2a", alpha = 0.25, colour = "#e05c2a", linewidth = 0.5) +
+        coord_flip() +
+        theme_void() + theme(plot.margin = margin(0, 2, 0, 2))
 
-    (p_top + plot_spacer() + p_scatter + p_right) +
-      plot_layout(ncol = 2, nrow = 2, widths = c(5, 1), heights = c(1, 5))
+      (p_top + plot_spacer() + p_scatter + p_right) +
+        plot_layout(ncol = 2, nrow = 2, widths = c(5, 1), heights = c(1, 5))
+    } else {
+      p_scatter
+    }
   })
 
   output$scatter_plot <- renderPlot({
-    if (is.null(input$scatter_iso_x) || !nzchar(input$scatter_iso_x)) {
-      return(.empty_plot("Select a gene and isoforms above to compare."))
+    scatter_type <- if (is.null(input$scatter_compare_type)) "isoform" else input$scatter_compare_type
+    if (scatter_type == "gene") {
+      if (is.null(input$scatter_gene_x) || !nzchar(input$scatter_gene_x))
+        return(.empty_plot("Select Gene X and Gene Y above to compare."))
+    } else {
+      if (is.null(input$scatter_iso_x) || !nzchar(input$scatter_iso_x))
+        return(.empty_plot("Select a gene and isoforms above to compare."))
     }
     scatter_plot_obj()
   }, res = 110)
@@ -1674,6 +1773,14 @@ server <- function(input, output, session) {
         input$scatter_gene_x, input$scatter_gene_y)
 
     seu        <- seurat_joined()
+    # Filter to selected cell groups (same picker as scatter tab)
+    sel <- input$scatter_cells_filter
+    grp <- input$group_by
+    if (!is.null(sel) && length(sel) > 0 && !is.null(grp) && nzchar(grp) &&
+        grp %in% colnames(seu@meta.data)) {
+      keep <- colnames(seu)[as.character(seu@meta.data[[grp]]) %in% sel]
+      if (length(keep) >= 1) seu <- subset(seu, cells = keep)
+    }
     assay_iso  <- iso_settings()$assay
     reduction  <- iso_settings()$reduction
     iso_x      <- input$scatter_iso_x
@@ -1682,7 +1789,8 @@ server <- function(input, output, session) {
     gene_y     <- input$scatter_gene_y
     diff_genes <- !identical(gene_x, gene_y)
 
-    use_categorical <- isTRUE(input$coexpr_viridis)
+    use_blend       <- isTRUE(input$compare_view == "blend")
+    use_categorical <- isTRUE(input$compare_view == "feature")
 
     .categorical_coexpr <- function(seu, feat1, feat2, assay, reduction, label1, label2, title) {
       emb      <- Seurat::Embeddings(seu, reduction = reduction)
@@ -1725,7 +1833,53 @@ server <- function(input, output, session) {
         )
     }
 
-    if (use_categorical) {
+    if (use_blend) {
+      blend_type <- if (is.null(input$blend_compare_type)) "isoform" else input$blend_compare_type
+      if (blend_type == "gene") {
+        validate(
+          need(!identical(gene_x, gene_y),
+               "Blend mode requires two different genes. Please select a different Gene X and Gene Y.")
+        )
+        gene_assay <- setdiff(names(seu@assays), assay_iso)[1]
+        req(!is.na(gene_assay))
+        Seurat::DefaultAssay(seu) <- gene_assay
+        p_blend <- Seurat::FeaturePlot(
+          seu,
+          features  = c(gene_x, gene_y),
+          blend     = TRUE,
+          cols      = c("grey90", "red", "blue"),
+          reduction = reduction,
+          blend.threshold = 0,
+          pt.size   = 0.6
+        )
+        p_blend[[1]] <- p_blend[[1]] + ggplot2::ggtitle(gene_x)
+        p_blend[[2]] <- p_blend[[2]] + ggplot2::ggtitle(gene_y)
+        p_blend[[3]] <- p_blend[[3]] + ggplot2::ggtitle("Blend")
+        p_blend
+      } else {
+        validate(
+          need(!identical(iso_x, iso_y),
+               "Blend mode requires two different isoforms. Please select a different Isoform X and Isoform Y.")
+        )
+        Seurat::DefaultAssay(seu) <- assay_iso
+        p_blend <- Seurat::FeaturePlot(
+          seu,
+          features  = c(iso_x, iso_y),
+          blend     = TRUE,
+          cols      = c("grey90", "red", "blue"),
+          reduction = reduction,
+          blend.threshold = 0,
+          pt.size   = 0.6
+        )
+        short_x <- sub("^(ENST[0-9]+\\.[0-9]+).*", "\\1", iso_x)
+        short_y <- sub("^(ENST[0-9]+\\.[0-9]+).*", "\\1", iso_y)
+        p_blend[[1]] <- p_blend[[1]] + ggplot2::ggtitle(short_x)
+        p_blend[[2]] <- p_blend[[2]] + ggplot2::ggtitle(short_y)
+        p_blend[[3]] <- p_blend[[3]] + ggplot2::ggtitle("Blend")
+        p_blend
+      }
+
+    } else if (use_categorical) {
       iso_panel <- .categorical_coexpr(seu, iso_x, iso_y, assay_iso, reduction,
                                         sub("-[^-]+$", "", iso_x),
                                         sub("-[^-]+$", "", iso_y),

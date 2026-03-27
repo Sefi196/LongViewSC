@@ -1,0 +1,33 @@
+# Clark Lab data — lives on server only, not committed
+clark_data/
+
+# Old/backup demo data
+demo_data/old_*.rds
+
+# Example figure generation scripts
+generate_example_figures.R
+generate_new_examples.R
+
+# LaTeX / report temp artefacts
+*.aux
+*.toc
+texput.*
+app/file*.log
+app/file*.pdf
+file4*.log
+file4*.pdf
+file4*.aux
+file4*.toc
+
+# R session artefacts
+.Rhistory
+.RData
+.Rproj.user/
+
+# OS
+.DS_Store
+generate_blend_tbr1_mapt.R
+generate_new_examples2.R
+www/example_images/07_isoform_pie.png
+www/example_images/12_isoform_blend.png
+www/example_images/12_isoform_blend_tbr1_gad1.png
