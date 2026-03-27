@@ -14,37 +14,32 @@ plot_pseudobulk_heatmap <- function(seurat_obj, group.by, isoforms_to_plot, isof
   # Aggregate expression (pseudobulk)
   #isoforms_to_plot = c("ENST00000335181.10-PKM", "ENST00000319622.10-PKM")
   
-  aggregated_expr <- AggregateExpression(seurat_obj, 
-                                         group.by = group.by, 
-                                         assays = isoform_assay, 
-                                         slot = "counts")$iso
+  aggregated_expr <- AggregateExpression(seurat_obj,
+                                         group.by = group.by,
+                                         assays = isoform_assay,
+                                         slot = "counts")[[isoform_assay]]
   # Convert to matrix
   expr_mat <- as.matrix(aggregated_expr)
-  
+
   # Normalize using CPM (Counts Per Million)
   cpm_mat <- t(t(expr_mat) / colSums(expr_mat) * 1e6)
-  
+
   # Log-transform for better visualization
   log_cpm_mat <- log1p(cpm_mat)
-  
+
   # Subset selected isoforms
   log_cpm_subset <- log_cpm_mat[rownames(log_cpm_mat) %in% isoforms_to_plot, , drop = FALSE]
-  
-  # Scale per isoform (row-wise z-score normalization)
-  #scaled_mat <- t(scale(t(log_cpm_subset)))
-  
+
+  # Strip gene symbol suffix — keep only the ENST ID
+  rownames(log_cpm_subset) <- sub("-.*", "", rownames(log_cpm_subset))
+
   # Generate interactive heatmap
-  p <- heatmaply(
-    log_cpm_subset,
-    scale = "none",  # No per-row normalization
-    Showticklabels = c(TRUE, TRUE),
-    dendrogram = "row")
-  
   heatmaply(
     log_cpm_subset,
-    scale = "none",  # No per-row normalization
+    scale = "none",
     Showticklabels = c(TRUE, TRUE),
-    dendrogram = "row")
+    dendrogram = "row"
+  )
 }
 
 # Call the plotting function with the necessary inputs

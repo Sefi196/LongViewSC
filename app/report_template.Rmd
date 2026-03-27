@@ -1,0 +1,312 @@
+---
+title: "LongViewSC Gene Report"
+output:
+  html_document:
+    self_contained: true
+    theme: flatly
+    toc: true
+    toc_float:
+      collapsed: false
+    toc_depth: 2
+    css: null
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    latex_engine: xelatex
+    includes:
+      in_header: null
+header-includes:
+  - \usepackage{longtable}
+  - \usepackage{booktabs}
+  - \usepackage{lscape}
+params:
+  gene: "Unknown"
+  date: ""
+  group_by: ""
+  report_format: "html"
+  selected_isoforms: NULL
+  celltype_plot: NULL
+  feature_plot_gene: NULL
+  vln_plot: NULL
+  isoform_plot: NULL
+  dotplot_isoform: NULL
+  transcript_plot: NULL
+  pie_plot: NULL
+  heatmap_plot: NULL
+  trajectory_gene_plot: NULL
+  trajectory_plot: NULL
+  isoform_stats_df: NULL
+  scatter_plot: NULL
+  scatter_iso_x: ""
+  scatter_iso_y: ""
+  compare_feature_plot: NULL
+  compare_gene_x: ""
+  compare_gene_y: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  dpi     = 300,
+  out.width = "100%"
+)
+library(ggplot2)
+library(patchwork)
+is_pdf <- isTRUE(params$report_format == "pdf")
+if (is_pdf) { library(pheatmap) } else { library(DT); library(plotly) }
+```
+
+```{r html_style, results='asis', eval=!is_pdf}
+cat('
+<style>
+  body { font-family: "Helvetica Neue", Arial, sans-serif; }
+  h1.title { color: #2c3e50; font-size: 2rem; }
+  h2 { color: #2c3e50; border-bottom: 2px solid #18bc9c; padding-bottom: 6px; margin-top: 2rem; }
+  h3 { color: #34495e; margin-top: 1.4rem; }
+  .meta-box {
+    background: #f8f9fa;
+    border-left: 5px solid #18bc9c;
+    padding: 14px 18px;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+  }
+  .meta-box table { margin: 0; width: auto; }
+  .meta-box td { padding: 3px 12px 3px 0; }
+  .meta-box td:first-child { font-weight: 600; color: #555; white-space: nowrap; }
+  .plot-note { color: #888; font-style: italic; font-size: 0.88rem; margin-top: 4px; }
+  hr { border-top: 1px solid #e0e0e0; margin: 2rem 0; }
+  .footer { color: #999; font-size: 0.82rem; text-align: center; margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; }
+</style>
+')
+```
+
+```{r header, results='asis'}
+iso_label <- if (length(params$selected_isoforms) > 0) {
+  paste(sub("-[^-]+$", "", params$selected_isoforms), collapse = ", ")
+} else {
+  "none selected"
+}
+
+if (is_pdf) {
+  cat(paste0(
+    "**Gene:** ", params$gene, "  \n",
+    "**Generated:** ", params$date, "  \n",
+    "**Grouping variable:** ", params$group_by, "  \n",
+    "**Selected isoforms:** ", iso_label, "\n\n",
+    "---\n\n"
+  ))
+} else {
+  cat(paste0(
+    '<div class="meta-box"><table>',
+    '<tr><td>Gene</td><td><strong>', params$gene, '</strong></td></tr>',
+    '<tr><td>Generated</td><td>', params$date, '</td></tr>',
+    '<tr><td>Grouping variable</td><td><code>', params$group_by, '</code></td></tr>',
+    '<tr><td>Selected isoforms</td><td>', iso_label, '</td></tr>',
+    '</table></div>'
+  ))
+}
+```
+
+## Overview
+
+### Cell Type Map
+
+```{r celltype_plot, fig.width=8, fig.height=6}
+if (!is.null(params$celltype_plot)) print(params$celltype_plot) else cat("Not available.")
+```
+
+### Gene Expression — Feature Plot
+
+```{r feature_plot_gene, fig.width=8, fig.height=6}
+if (!is.null(params$feature_plot_gene)) print(params$feature_plot_gene) else cat("Not available.")
+```
+
+### Gene Expression — Violin Plot
+
+```{r vln_plot, fig.width=10, fig.height=5}
+if (!is.null(params$vln_plot)) print(params$vln_plot) else cat("Not available.")
+```
+
+---
+
+## Isoform Statistics
+
+```{r isoform_stats, results='asis'}
+if (!is.null(params$isoform_stats_df)) {
+  df  <- params$isoform_stats_df
+  out <- data.frame(
+    `Transcript ID`           = df$short_label,
+    `Total Norm. Counts`      = round(df$total_expr, 1),
+    `Raw Counts`              = ifelse(is.na(df$raw_counts), NA_integer_, df$raw_counts),
+    `% Cells Expressing`      = df$pct_cells,
+    `Cells (n)`               = df$num_cells,
+    `Median Expr. (non-zero)` = df$median_expr,
+    check.names = FALSE,
+    stringsAsFactors = FALSE
+  )
+  if (is_pdf) {
+    out_pdf <- out
+    names(out_pdf)[names(out_pdf) == "% Cells Expressing"] <- "Pct Cells Expressing"
+    cat("\\newpage\n\\begin{landscape}\n")
+    print(knitr::kable(out_pdf, format = "latex", booktabs = TRUE, longtable = TRUE, escape = TRUE))
+    cat("\\end{landscape}\n\\newpage\n")
+  } else {
+    DT::datatable(
+      out,
+      rownames = FALSE,
+      options  = list(pageLength = 20, scrollX = TRUE, order = list(list(1, "desc"))),
+      class    = "compact stripe hover"
+    ) |>
+      DT::formatStyle(
+        "% Cells Expressing",
+        background         = DT::styleColorBar(c(0, 100), "#c8e6c9"),
+        backgroundSize     = "98% 70%",
+        backgroundRepeat   = "no-repeat",
+        backgroundPosition = "center"
+      )
+  }
+} else {
+  cat("No isoform statistics available.")
+}
+```
+
+---
+
+## Isoform Expression
+
+### Feature Plots
+
+```{r isoform_feature_plot, fig.width=14, fig.height=ceiling(length(params$selected_isoforms)/4)*4+2}
+if (!is.null(params$isoform_plot)) print(params$isoform_plot) else cat("Not available.")
+```
+
+### Dot Plot
+
+```{r dotplot_isoform, fig.width=10, fig.height=6}
+if (!is.null(params$dotplot_isoform)) print(params$dotplot_isoform) else cat("Not available.")
+```
+
+---
+
+## Transcript Structure
+
+```{r transcript_structure, fig.width=12, fig.height=6}
+if (!is.null(params$transcript_plot)) {
+  print(params$transcript_plot)
+} else {
+  cat("No GTF file was loaded — transcript structure not available.")
+}
+```
+
+---
+
+## Isoform Proportions
+
+```{r pie_plot, fig.width=12, fig.height=8}
+if (!is.null(params$pie_plot)) print(params$pie_plot) else cat("Not available.")
+```
+
+---
+
+## Pseudobulk Heatmap
+
+```{r heatmap_plot, fig.width=10, fig.height=8}
+if (!is.null(params$heatmap_plot)) {
+  if (is_pdf) {
+    # Re-compute a static pheatmap for PDF (plotly can't render in PDF)
+    tryCatch({
+      library(pheatmap)
+      # Extract the data matrix from the plotly object
+      mat_data <- params$heatmap_plot$x$data
+      # Build matrix from plotly source data
+      z    <- mat_data[[1]]$z
+      rows <- mat_data[[1]]$y
+      cols <- mat_data[[1]]$x
+      if (!is.null(z) && !is.null(rows) && !is.null(cols)) {
+        m <- matrix(as.numeric(z), nrow = length(rows), ncol = length(cols),
+                    dimnames = list(rows, cols))
+        # Strip -GENENAME suffix for cleaner row labels
+        rownames(m) <- sub("-[^-]+$", "", rownames(m))
+        pheatmap(m, cluster_cols = FALSE, fontsize = 11,
+                 color = colorRampPalette(c("#f7fbff","#2171b5"))(50),
+                 border_color = NA)
+      } else {
+        cat("*Heatmap data could not be extracted for PDF.*")
+      }
+    }, error = function(e) cat("*Heatmap not available in PDF.*"))
+  } else if (inherits(params$heatmap_plot, "plotly")) {
+    params$heatmap_plot
+  } else {
+    print(params$heatmap_plot)
+  }
+} else {
+  cat("Not available — select at least 2 isoforms and press GO to generate.")
+}
+```
+
+---
+
+## Expression Trajectory
+
+### Gene-level
+
+```{r trajectory_gene, fig.width=10, fig.height=5}
+if (!is.null(params$trajectory_gene_plot)) {
+  print(params$trajectory_gene_plot)
+} else {
+  cat("No gene trajectory was generated in this session.")
+}
+```
+
+### Isoform-level
+
+```{r trajectory_isoform, fig.width=12, fig.height=8}
+if (!is.null(params$trajectory_plot)) {
+  print(params$trajectory_plot)
+} else {
+  cat("No isoform trajectory was generated in this session.")
+}
+```
+
+---
+
+## Isoform Scatter
+
+```{r scatter_plot, fig.width=11, fig.height=9}
+if (!is.null(params$scatter_plot)) {
+  if (nzchar(params$scatter_iso_x) && nzchar(params$scatter_iso_y))
+    cat(paste0("**X:** ", params$scatter_iso_x, " &nbsp;|&nbsp; **Y:** ", params$scatter_iso_y, "\n\n"))
+  print(params$scatter_plot)
+} else {
+  cat("No isoform scatter plot was generated in this session.")
+}
+```
+
+---
+
+## Co-expression Feature Map
+
+```{r compare_feature_plot, fig.width=8, fig.height=10}
+if (!is.null(params$compare_feature_plot)) {
+  if (nzchar(params$compare_gene_x) && nzchar(params$compare_gene_y) &&
+      !identical(params$compare_gene_x, params$compare_gene_y))
+    cat(paste0("**Genes:** ", params$compare_gene_x, " vs ", params$compare_gene_y, "\n\n"))
+  print(params$compare_feature_plot)
+} else {
+  cat("No co-expression feature map was generated in this session.")
+}
+```
+
+---
+
+```{r footer, results='asis', eval=!is_pdf}
+cat('<div class="footer">Generated by <strong>LongViewSC</strong> &mdash; Clark Laboratory, University of Melbourne</div>')
+```
+
+```{r footer_pdf, results='asis', eval=is_pdf}
+cat("\n\n*Generated by LongViewSC — Clark Laboratory, University of Melbourne*\n")
+```

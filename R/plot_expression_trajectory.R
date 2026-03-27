@@ -19,7 +19,8 @@ plotExpressionTrajectory <- function(
     cell_type_col,
     ordered_levels,
     assay = "iso",
-    layer = "data"
+    layer = "data",
+    shared_y = FALSE
 ) {
   library(dplyr)
   library(tidyr)
@@ -77,26 +78,29 @@ plotExpressionTrajectory <- function(
       method  = "loess",
       formula = y ~ x,
       colour  = "black",
+      fill    = "grey70",
       linewidth = 1,
-      se      = FALSE
+      se      = TRUE,
+      alpha   = 0.25
     ) +
     
     ggplot2::scale_colour_manual(values = pal, guide = "none") +
     ggplot2::scale_x_discrete(expand = ggplot2::expansion(add = 0.5)) +
     
-    ggplot2::facet_wrap(~ isoform_label, scales = "free_y", ncol = 2) +
+    ggplot2::facet_wrap(~ isoform_label, scales = if (shared_y) "fixed" else "free_y", ncol = 2) +
     
     ggplot2::labs(
       x = cell_type_col,
       y = "Normalised Expression"
     ) +
     
-    ggplot2::theme_bw(base_size = 13) +
+    ggplot2::theme_bw(base_size = 14) +
     ggplot2::theme(
       strip.background = ggplot2::element_rect(fill = "#2c3e50"),
-      strip.text       = ggplot2::element_text(colour = "white", face = "bold", size = 11),
-      axis.text.x      = ggplot2::element_text(angle = 40, hjust = 1, size = 10),
-      axis.title       = ggplot2::element_text(face = "bold"),
+      strip.text       = ggplot2::element_text(colour = "white", face = "bold", size = 13, family = "sans"),
+      axis.text.x      = ggplot2::element_text(angle = 25, hjust = 1, size = 13, family = "sans"),
+      axis.text.y      = ggplot2::element_text(size = 13, family = "sans"),
+      axis.title       = ggplot2::element_text(face = "bold", size = 14, family = "sans"),
       panel.grid.minor = ggplot2::element_blank(),
       plot.margin      = ggplot2::margin(10, 15, 10, 10)
     )

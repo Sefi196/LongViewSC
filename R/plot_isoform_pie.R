@@ -11,15 +11,15 @@
 #   top_n     : integer. Number of highest-proportion isoforms to highlight
 #   ncol      : integer. Pies per row
 # ─────────────────────────────────────────────────────────────────────────────
-plotIsoformPie <- function(raw_data, gene, selected_isoforms = NULL, ncol = 4, min_counts = 0, colour_map = NULL) {
-  
+plotIsoformPie <- function(raw_data, gene, selected_isoforms = NULL, ncol = 4, min_counts = 0, colour_map = NULL, group_by_label = NULL, display_mode = "proportion") {
+
   # 1) Filter to this gene; sum expression per (cell_type, transcript_id)
   df_gene <- raw_data %>%
     dplyr::filter(gene_id == gene) %>%
     dplyr::group_by(gene_id, cell_type, transcript_id) %>%
     dplyr::summarise(isoform_expression = sum(expression, na.rm = TRUE),
                      .groups = "drop")
-  
+
   # 2) Compute proportions within each cell_type
   df_gene <- df_gene %>%
     dplyr::group_by(gene_id, cell_type) %>%
@@ -29,9 +29,9 @@ plotIsoformPie <- function(raw_data, gene, selected_isoforms = NULL, ncol = 4, m
                                 isoform_expression / total_expression, 0)
     ) %>%
     dplyr::ungroup()
-  
+
   totals <- dplyr::distinct(df_gene, cell_type, total_expression)
-  
+
   # Filter out cell types below min_counts threshold
   if (min_counts > 0) {
     keep_types <- totals$cell_type[totals$total_expression >= min_counts]
@@ -40,23 +40,18 @@ plotIsoformPie <- function(raw_data, gene, selected_isoforms = NULL, ncol = 4, m
     if (nrow(df_gene) == 0)
       stop("No cell types remaining after min_counts filter (threshold = ", min_counts, ")")
   }
-  
-  # 3) Normalise transcript_id to bare ID — strip dot-version (ENST00000x.10)
-  #    AND -GENENAME suffix (BambuTx13041-PKM) so both conventions match
-  #    the same format used in top_isoforms below.
+
+  # 3) Normalise transcript_id
   df_gene <- dplyr::mutate(df_gene,
-                           stripped_id = sub("-[^-]+$", "",   # strip -GENE
-                                             sub("[.].*$",  "", transcript_id)))  # strip .version
-  
-  # 4) Determine which isoforms to highlight (from chip selection, stripped to match stripped_id)
+                           stripped_id = sub("-[^-]+$", "",
+                                             sub("[.].*$",  "", transcript_id)))
+
+  # 4) Determine which isoforms to highlight
   if (!is.null(selected_isoforms) && length(selected_isoforms) > 0) {
-    # Strip -GENENAME suffix from selected feature names to match stripped_id
     top_isoforms <- sub("-[^-]+$", "", selected_isoforms)
-    # Also handle version suffixes (e.g. .9) — strip after last dot
     top_isoforms <- sub("[.][^.]*$", "", top_isoforms)
     top_isoforms <- unique(top_isoforms)
   } else {
-    # Fallback: show top 5 by peak proportion
     peak_prop <- df_gene %>%
       dplyr::group_by(stripped_id) %>%
       dplyr::summarise(peak_prop = max(proportion, na.rm = TRUE), .groups = "drop")
@@ -65,77 +60,113 @@ plotIsoformPie <- function(raw_data, gene, selected_isoforms = NULL, ncol = 4, m
       dplyr::slice_head(n = 5) %>%
       dplyr::pull(stripped_id)
   }
-  
+
   # 5) Group non-selected isoforms into "Other isoforms"
   df5 <- dplyr::mutate(df_gene,
                        transcript_group = ifelse(stripped_id %in% top_isoforms,
                                                  stripped_id, "Other isoforms"))
-  
+
   df5_summed <- df5 %>%
     dplyr::group_by(gene_id, cell_type, transcript_group) %>%
     dplyr::summarise(proportion = sum(proportion, na.rm = TRUE), .groups = "drop")
-  
-  # Clamp proportions to [0, 1] — floating point can push sums just above 1,
-  # which causes ggplot to silently clip the last slice off the pie
+
   df5_summed <- df5_summed %>%
     dplyr::mutate(proportion = pmin(pmax(proportion, 0), 1))
-  
-  # 6) Build colour map — use externally-supplied map if provided (keeps colours
-  #    consistent with the sidebar chips), otherwise compute from hue_pal
+
+  # 6) Build colour map
   non_grey_levels <- sort(top_isoforms)
   if (!is.null(colour_map) && all(non_grey_levels %in% names(colour_map))) {
     hues <- colour_map[non_grey_levels]
   } else {
     hues <- stats::setNames(scales::hue_pal()(length(non_grey_levels)), non_grey_levels)
   }
-  color_map <- c(hues, "Other isoforms" = "grey50")
-  
+  color_map <- c(hues, "Other isoforms" = "#cccccc")
+
   # 7) Add cell label with total counts
   totals <- dplyr::mutate(totals,
-                          cell_label = paste0(cell_type, "\n(counts = ",
-                                              scales::comma(total_expression), ")"))
-  
+                          cell_label = paste0(cell_type,
+                                              "\n(n = ", scales::comma(total_expression), ")"))
+
   df5_summed <- dplyr::left_join(
     df5_summed,
     dplyr::select(totals, cell_type, cell_label),
     by = "cell_type"
   )
-  
-  # 8) Plot
-  ggplot2::ggplot(df5_summed,
-                  ggplot2::aes(x = "", y = proportion, fill = transcript_group)) +
-    ggplot2::geom_col(color = "white", linewidth = 0.4, width = 1) +
-    ggplot2::scale_y_continuous(limits = c(0, 1), expand = c(0, 0),
-                                oob = scales::squish) +
-    ggplot2::coord_polar(theta = "y") +
-    ggplot2::facet_wrap(~ cell_label, ncol = ncol, strip.position = "bottom") +
-    ggplot2::geom_text(
-      ggplot2::aes(label = ifelse(proportion > 0.06,
-                                  paste0(round(proportion * 100, 0), "%"), "")),
-      position = ggplot2::position_stack(vjust = 0.5),
-      color = "white", size = 3.2, fontface = "bold"
-    ) +
-    ggplot2::scale_fill_manual(values = color_map,
-                               breaks = c(non_grey_levels, "Other isoforms")) +
-    ggplot2::labs(
-      title = paste0("Isoform proportions \u2014 ", gene),
-      fill  = "Isoform"
-    ) +
-    ggplot2::theme_void(base_size = 13) +
-    ggplot2::theme(
-      plot.title      = ggplot2::element_text(hjust = 0.5, face = "bold", size = 14,
-                                              margin = ggplot2::margin(b = 10)),
-      strip.text      = ggplot2::element_text(size = 9.5, color = "#444444", vjust = 0.5),
-      strip.placement = "outside",
-      legend.position = "right",
-      legend.title    = ggplot2::element_text(size = 11, face = "bold"),
-      legend.text     = ggplot2::element_text(size = 9),
-      legend.key.size = ggplot2::unit(0.9, "lines"),
-      panel.spacing.x = ggplot2::unit(1.2, "lines"),
-      panel.spacing.y = ggplot2::unit(1.2, "lines"),
-      plot.margin     = ggplot2::margin(12, 12, 12, 12),
-      plot.background = ggplot2::element_rect(fill = "white", color = NA)
-    )
+
+  plot_title <- if (!is.null(group_by_label) && nchar(group_by_label) > 0)
+    paste0("Isoform proportions \u2014 ", gene, " by ", group_by_label)
+  else
+    paste0("Isoform proportions \u2014 ", gene)
+
+  base_theme <- ggplot2::theme(
+    plot.title       = ggplot2::element_text(hjust = 0.5, face = "bold", size = 17,
+                                             family = "sans", color = "#2c3e50",
+                                             margin = ggplot2::margin(b = 16)),
+    strip.text       = ggplot2::element_text(size = 13, color = "#333333", face = "bold",
+                                             family = "sans",
+                                             margin = ggplot2::margin(t = 8, b = 2)),
+    strip.background = ggplot2::element_rect(fill = "#f4f6f8", color = NA),
+    legend.position  = "right",
+    legend.title     = ggplot2::element_text(size = 13, face = "bold", family = "sans", color = "#333333"),
+    legend.text      = ggplot2::element_text(size = 12, family = "sans", color = "#333333"),
+    legend.key.size  = ggplot2::unit(1.2, "lines"),
+    panel.spacing.x  = ggplot2::unit(1.6, "lines"),
+    panel.spacing.y  = ggplot2::unit(1.2, "lines"),
+    plot.margin      = ggplot2::margin(16, 16, 16, 16),
+    plot.background  = ggplot2::element_rect(fill = "white", color = NA)
+  )
+
+  if (isTRUE(display_mode == "bar")) {
+    # ── 8b) Bar: stacked proportions with raw total count labels on top ───────
+    df_bar <- df5_summed %>%
+      dplyr::left_join(dplyr::select(totals, cell_type, total_expression), by = "cell_type")
+
+    top_labels <- dplyr::distinct(df_bar, cell_label, total_expression)
+
+    ggplot2::ggplot(df_bar,
+                    ggplot2::aes(x = cell_label, y = proportion, fill = transcript_group)) +
+      ggplot2::geom_col(color = "black", linewidth = 0.3, width = 0.7) +
+      ggplot2::geom_text(
+        data = top_labels,
+        ggplot2::aes(x = cell_label, y = 1.01,
+                     label = scales::comma(total_expression, accuracy = 1)),
+        inherit.aes = FALSE, size = 3.2, hjust = 0.5, vjust = 0, color = "#333333"
+      ) +
+      ggplot2::scale_y_continuous(
+        labels = scales::percent,
+        expand = ggplot2::expansion(mult = c(0, 0.12))
+      ) +
+      ggplot2::scale_fill_manual(values = color_map,
+                                 breaks = c(non_grey_levels, "Other isoforms")) +
+      ggplot2::labs(title = plot_title, x = NULL, y = "Proportion", fill = "Isoform") +
+      ggplot2::theme_minimal(base_size = 14) +
+      ggplot2::theme(
+        axis.text.x  = ggplot2::element_text(angle = 35, hjust = 1, size = 13, family = "sans"),
+        axis.text.y  = ggplot2::element_text(size = 13, family = "sans"),
+        axis.title.y = ggplot2::element_text(size = 14, face = "bold", family = "sans")
+      ) +
+      base_theme
+  } else {
+    # ── 8a) Proportions: pie chart ────────────────────────────────────────────
+    ggplot2::ggplot(df5_summed,
+                    ggplot2::aes(x = "", y = proportion, fill = transcript_group)) +
+      ggplot2::geom_col(color = "black", linewidth = 0.4, width = 1) +
+      ggplot2::scale_y_continuous(limits = c(0, 1), expand = c(0, 0),
+                                  oob = scales::squish) +
+      ggplot2::coord_polar(theta = "y") +
+      ggplot2::facet_wrap(~ cell_label, ncol = ncol, strip.position = "bottom") +
+      ggplot2::geom_text(
+        ggplot2::aes(label = ifelse(proportion > 0.07,
+                                    paste0(round(proportion * 100, 0), "%"), "")),
+        position = ggplot2::position_stack(vjust = 0.5),
+        color = "black", size = 4.5, fontface = "bold"
+      ) +
+      ggplot2::scale_fill_manual(values = color_map,
+                                 breaks = c(non_grey_levels, "Other isoforms")) +
+      ggplot2::labs(title = plot_title, fill = "Isoform") +
+      ggplot2::theme_void(base_size = 14) +
+      base_theme
+  }
 }
 
 
@@ -162,7 +193,9 @@ plotIsoformPieFromSeurat <- function(
     layer         = "counts",
     cell_type_col = "BroadType",
     min_counts    = 0,
-    colour_map    = NULL
+    colour_map    = NULL,
+    group_by_label = NULL,
+    display_mode  = "proportion"
 ) {
   Seurat::DefaultAssay(seurat_obj) <- assay
   
@@ -193,5 +226,152 @@ plotIsoformPieFromSeurat <- function(
     dplyr::filter(!is.na(cell_type), expression > 0) %>%
     dplyr::mutate(gene_id = gene)
   
-  plotIsoformPie(raw_data = df_long, gene = gene, selected_isoforms = selected_isoforms, ncol = ncol, min_counts = min_counts, colour_map = colour_map)
+  plotIsoformPie(raw_data = df_long, gene = gene, selected_isoforms = selected_isoforms,
+                 ncol = ncol, min_counts = min_counts, colour_map = colour_map,
+                 group_by_label = group_by_label, display_mode = display_mode)
+}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# plotIsoformSankey
+#
+# Interactive Sankey diagram: isoforms (left) → cell types (right).
+# Flow width = proportion or absolute counts.
+# Uses plotly for an interactive output.
+# ─────────────────────────────────────────────────────────────────────────────
+plotIsoformSankeyFromSeurat <- function(
+    seurat_obj,
+    gene,
+    selected_isoforms = NULL,
+    assay         = "iso",
+    layer         = "counts",
+    cell_type_col = "BroadType",
+    min_counts    = 0,
+    colour_map    = NULL,
+    display_mode  = "proportion"
+) {
+  mat  <- Seurat::GetAssayData(seurat_obj, assay = assay, layer = layer)
+  meta <- seurat_obj@meta.data %>%
+    tibble::rownames_to_column("cell") %>%
+    dplyr::select(cell, cell_type = dplyr::all_of(cell_type_col))
+
+  gene_regex    <- paste0("(^|-)", gene, "$")
+  matched_feats <- grep(gene_regex, rownames(mat), value = TRUE)
+  if (length(matched_feats) == 0)
+    matched_feats <- grep(paste0("^", gene, "($|\\.)"), rownames(mat), value = TRUE)
+  if (length(matched_feats) == 0)
+    stop("No isoforms found for gene: ", gene)
+
+  mat_sub <- mat[matched_feats, , drop = FALSE]
+  df_long <- as.data.frame(as.table(as.matrix(mat_sub)))
+  colnames(df_long) <- c("transcript_id", "cell", "expression")
+  df_long <- df_long %>%
+    dplyr::left_join(meta, by = "cell") %>%
+    dplyr::filter(!is.na(cell_type), expression > 0) %>%
+    dplyr::mutate(
+      stripped_id = sub("-[^-]+$", "", sub("[.].*$", "", transcript_id))
+    )
+
+  # Determine isoforms to highlight (same logic as pie)
+  if (!is.null(selected_isoforms) && length(selected_isoforms) > 0) {
+    top_isoforms <- unique(sub("-[^-]+$", "", sub("[.][^.]*$", "", selected_isoforms)))
+  } else {
+    top_isoforms <- df_long %>%
+      dplyr::group_by(stripped_id) %>%
+      dplyr::summarise(tot = sum(expression), .groups = "drop") %>%
+      dplyr::arrange(dplyr::desc(tot)) %>%
+      dplyr::slice_head(n = 5) %>%
+      dplyr::pull(stripped_id)
+  }
+
+  df_long <- dplyr::mutate(df_long,
+    isoform_group = ifelse(stripped_id %in% top_isoforms, stripped_id, "Other isoforms"))
+
+  # Aggregate per (isoform_group, cell_type)
+  df_agg <- df_long %>%
+    dplyr::group_by(isoform_group, cell_type) %>%
+    dplyr::summarise(total = sum(expression, na.rm = TRUE), .groups = "drop")
+
+  # Filter by min_counts (per cell_type total)
+  if (min_counts > 0) {
+    ct_totals <- df_agg %>%
+      dplyr::group_by(cell_type) %>%
+      dplyr::summarise(ct_total = sum(total), .groups = "drop")
+    keep_ct <- ct_totals$cell_type[ct_totals$ct_total >= min_counts]
+    df_agg  <- dplyr::filter(df_agg, cell_type %in% keep_ct)
+  }
+  if (nrow(df_agg) == 0)
+    stop("No data remaining after filtering.")
+
+  if (display_mode == "proportion") {
+    df_agg <- df_agg %>%
+      dplyr::group_by(cell_type) %>%
+      dplyr::mutate(value = total / sum(total)) %>%
+      dplyr::ungroup()
+    value_fmt <- "proportion"
+  } else {
+    df_agg <- dplyr::mutate(df_agg, value = total)
+    value_fmt <- "counts"
+  }
+
+  # Build node lists
+  iso_nodes  <- sort(unique(df_agg$isoform_group))
+  ct_nodes   <- sort(unique(df_agg$cell_type))
+  all_nodes  <- c(iso_nodes, ct_nodes)
+  node_idx   <- stats::setNames(seq_along(all_nodes) - 1L, all_nodes)
+
+  # Node colours
+  non_grey <- setdiff(iso_nodes, "Other isoforms")
+  if (!is.null(colour_map)) {
+    stripped_map <- colour_map
+    names(stripped_map) <- sub("-[^-]+$", "", sub("[.][^.]*$", "", names(colour_map)))
+    iso_colours <- sapply(iso_nodes, function(n) {
+      if (n == "Other isoforms") "#cccccc"
+      else if (n %in% names(stripped_map)) stripped_map[[n]]
+      else scales::hue_pal()(length(non_grey))[match(n, non_grey)]
+    })
+  } else {
+    pal <- stats::setNames(scales::hue_pal()(length(non_grey)), non_grey)
+    iso_colours <- sapply(iso_nodes, function(n) {
+      if (n == "Other isoforms") "#cccccc" else pal[[n]]
+    })
+  }
+  ct_colours <- rep("#a8c5da", length(ct_nodes))
+  node_colours <- c(iso_colours, ct_colours)
+
+  sources <- node_idx[df_agg$isoform_group]
+  targets <- node_idx[df_agg$cell_type]
+
+  hover_label <- if (display_mode == "proportion")
+    paste0(round(df_agg$value * 100, 1), "% of ", df_agg$cell_type)
+  else
+    paste0(scales::comma(round(df_agg$value)), " counts in ", df_agg$cell_type)
+
+  plotly::plot_ly(
+    type = "sankey",
+    orientation = "h",
+    node = list(
+      label = all_nodes,
+      color = node_colours,
+      pad   = 15,
+      thickness = 20,
+      line  = list(color = "black", width = 0.5)
+    ),
+    link = list(
+      source      = sources,
+      target      = targets,
+      value       = df_agg$value,
+      customdata  = hover_label,
+      hovertemplate = "%{customdata}<extra></extra>"
+    )
+  ) %>%
+    plotly::layout(
+      title = list(
+        text = paste0("Isoform flow \u2014 ", gene,
+                      " (", if (display_mode == "proportion") "proportions" else "counts", ")"),
+        font = list(size = 15, color = "#2c3e50")
+      ),
+      font = list(size = 11),
+      paper_bgcolor = "white"
+    )
 }
