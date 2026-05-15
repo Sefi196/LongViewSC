@@ -762,9 +762,18 @@ ui <- fluidPage(
           )
         ),
         div(class = "tut-img",
-          tags$img(src = "example_images/01_overview_stack.png?v=202603270900", class = "tut-screenshot",
-            style = "width:100%;"),
-          tags$p(class = "tut-screenshot-cap", "Cell type UMAP (top) and VIM gene expression feature plot (bottom)")
+          div(class = "tut-screenshot-pair",
+            div(
+              tags$img(src = "example_images/01_umap_clusters.png", class = "tut-screenshot"),
+              tags$p(class = "tut-screenshot-cap", "UMAP — Seurat clusters")
+            ),
+            div(
+              tags$img(src = "example_images/02_vim_feature_plot.png", class = "tut-screenshot"),
+              tags$p(class = "tut-screenshot-cap", "VIM gene expression on UMAP")
+            )
+          ),
+          tags$img(src = "example_images/03_vim_violin.png", class = "tut-screenshot", style = "width:100%;"),
+          tags$p(class = "tut-screenshot-cap", "Violin plot — VIM gene expression by cluster")
         )
       )
     ),
@@ -774,7 +783,7 @@ ui <- fluidPage(
       div(class = "tut-section-inner reverse",
         div(class = "tut-text",
           tags$h2(span(class="tut-step-badge","2"), "Isoform Statistics",
-                  HTML('<span class="tut-tab-badge">Isoform Summary tab</span>')),
+                  HTML('<span class="tut-tab-badge">Isoform Statistics tab</span>')),
           tags$p("A searchable, sortable table listing every isoform detected for your selected gene, with expression and detection statistics. Use this to identify the most relevant isoforms before diving into other plots."),
           tags$ul(
             tags$li("Isoforms are named ", tags$code("ENST00000XXXXX.X-GENE"), " (e.g. ", tags$code("ENST00000224237.9-VIM"), ")."),
@@ -805,6 +814,7 @@ ui <- fluidPage(
           tags$p("Single-cell resolution plots for each selected isoform: a feature plot projected onto the isoform-level UMAP embedding and a violin plot across groups."),
           tags$ul(
             tags$li(tags$strong("Feature plots"), " use the isoform-level UMAP (", tags$code("umap_iso"), ") if present, otherwise the gene-level UMAP."),
+            tags$li(tags$strong("Violin plots"), " show expression per isoform, grouped by your chosen metadata column."),
             tags$li("Only isoforms selected via the chip panel are shown.")
           ),
           div(class = "tut-warn",
@@ -831,7 +841,8 @@ ui <- fluidPage(
             tags$li("GTF transcript IDs must match the ENST IDs in your isoform assay.")
           ),
           div(class = "tut-note",
-            tags$strong("Note:"), " Any standard GTF file should work. The app matches transcript IDs automatically."
+            tags$strong("Naming:"), " Isoforms must follow the format ", tags$code("ENST00000XXXXX.X-GENENAME"),
+            " for automatic GTF matching."
           )
         ),
         div(class = "tut-img",
@@ -878,16 +889,16 @@ ui <- fluidPage(
           )
         ),
         div(class = "tut-img",
-          tags$img(src = "example_images/07_isoform_pie_rbfox1.png?v=202603270900", class = "tut-screenshot", style = "width:100%;"),
-          tags$p(class = "tut-screenshot-cap", "RBFOX1 isoform proportions in Glutamatergic neurons — each slice shows the fraction of total gene expression contributed by each isoform")
+          tags$img(src = "example_images/07_vim_isoform_pie.png", class = "tut-screenshot"),
+          tags$p(class = "tut-screenshot-cap", "VIM isoform proportions across all 8 clusters")
         )
       )
     ),
 
     # ── Tab 7: Trajectory ─────────────────────────────────────────────────
     div(class = "tut-section",
-      div(class = "tut-section-inner",
-        div(class = "tut-text",
+      div(class = "tut-section-inner", style = "flex-direction: column;",
+        div(class = "tut-text", style = "max-width: 680px;",
           tags$h2(span(class="tut-step-badge","7"), "Expression Trajectory",
                   HTML('<span class="tut-tab-badge">Trajectory tab</span>')),
           tags$p("Plots single-cell normalised isoform expression across an ordered sequence of groups (e.g. developmental stages), with a loess smooth overlaid per isoform panel. Reveals gradual changes in isoform usage along a trajectory."),
@@ -900,8 +911,9 @@ ui <- fluidPage(
             tags$strong("Pairing tip:"), " Use Proportions to see ", tags$em("which"), " isoform dominates, and Trajectory to see ", tags$em("when"), " it changes along the axis."
           )
         ),
-        div(class = "tut-img",
-          tags$img(src = "example_images/08_trajectory_wide.png?v=202603270900", class = "tut-screenshot", style = "width:100%;"),
+        div(style = "width:100%; margin-top:18px;",
+          tags$img(src = "example_images/08_trajectory_wide.png?v=202603271045", class = "tut-screenshot",
+            style = "width:100%;"),
           tags$p(class = "tut-screenshot-cap", "VIM isoform expression trajectory across cell types — loess smooth with 95% confidence ribbon per isoform")
         )
       )
@@ -928,12 +940,9 @@ ui <- fluidPage(
           )
         ),
         div(class = "tut-img",
-          tags$img(src = "example_images/12_isoform_blend_tbr1_mapt.png?v=202603270900", class = "tut-screenshot",
-                   style = "width:100%; margin-bottom:10px;"),
-          tags$p(class = "tut-screenshot-cap", "Blend view — dominant isoforms of TBR1 (red) vs MAPT (blue) on the UMAP; purple cells co-express both"),
-          tags$img(src = "example_images/13_isoform_coexpr_categorical.png?v=202603270800", class = "tut-screenshot",
-                   style = "width:100%; margin-top:14px;"),
-          tags$p(class = "tut-screenshot-cap", "Feature Map view — categorical co-expression: cells classified by which isoform(s) they express")
+          tags$img(src = "example_images/12_coexpr_panel_2x2.png?v=202603270960", class = "tut-screenshot",
+                   style = "width:100%;"),
+          tags$p(class = "tut-screenshot-cap", "Top: individual expression maps for TBR1 and MAPT dominant isoforms. Bottom: UMAP blend (red = TBR1, blue = MAPT, purple = co-expressed) with colour scale.")
         )
       )
     ),

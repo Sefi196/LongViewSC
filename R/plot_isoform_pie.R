@@ -164,32 +164,34 @@ plotIsoformPie <- function(raw_data, gene, selected_isoforms = NULL, ncol = 4, m
       legend_theme
 
   } else {
-    # ── Donut chart ───────────────────────────────────────────────────────────
+    # ── Pie chart ─────────────────────────────────────────────────────────────
     lvls <- c(non_grey_levels, "Other isoforms")
     df5_summed$transcript_group <- factor(df5_summed$transcript_group, levels = lvls)
 
-    # n count in the centre of each donut — one row per cell_type
-    centre_df <- dplyr::distinct(df5_summed, cell_type, total_expression) %>%
-      dplyr::mutate(n_label = paste0("n = ", scales::comma(total_expression)))
+    # Include n count in the facet strip label
+    n_lookup <- dplyr::distinct(df5_summed, cell_type, total_expression) %>%
+      dplyr::mutate(cell_type_label = paste0(cell_type, "\nn = ",
+                                              scales::comma(total_expression, accuracy = 1)))
+    df5_summed <- dplyr::left_join(df5_summed,
+                                    dplyr::select(n_lookup, cell_type, cell_type_label),
+                                    by = "cell_type")
+    ordered_labels <- n_lookup$cell_type_label[match(unique(df5_summed$cell_type),
+                                                      n_lookup$cell_type)]
+    df5_summed$cell_type_label <- factor(df5_summed$cell_type_label,
+                                          levels = ordered_labels)
 
     ggplot2::ggplot(df5_summed,
-                    ggplot2::aes(x = 2, y = proportion, fill = transcript_group)) +
-      ggplot2::geom_col(color = "#555555", linewidth = 0.5, width = 1) +
+                    ggplot2::aes(x = 0.5, y = proportion, fill = transcript_group)) +
+      ggplot2::geom_col(color = "grey65", linewidth = 0.35, width = 1) +
       ggplot2::geom_text(
         ggplot2::aes(label = ifelse(proportion >= 0.06,
                                     paste0(round(proportion * 100), "%"), "")),
         position  = ggplot2::position_stack(vjust = 0.5),
         color     = "#111111", size = 4.2, fontface = "bold", family = "sans"
       ) +
-      ggplot2::geom_text(
-        data        = centre_df,
-        ggplot2::aes(x = 0.2, y = 0.5, label = n_label),
-        inherit.aes = FALSE,
-        size = 3.6, color = "#000000", fontface = "italic", family = "sans"
-      ) +
-      ggplot2::coord_polar(theta = "y", start = 0, clip = "off") +
-      ggplot2::xlim(c(-0.5, 2.75)) +
-      ggplot2::facet_wrap(~ cell_type, ncol = ncol) +
+      ggplot2::coord_polar(theta = "y", start = 0) +
+      ggplot2::xlim(c(0, 1)) +
+      ggplot2::facet_wrap(~ cell_type_label, ncol = ncol) +
       ggplot2::scale_y_continuous(limits = c(0, 1), expand = c(0, 0),
                                    oob = scales::squish) +
       ggplot2::scale_fill_manual(values = color_map,
@@ -200,9 +202,9 @@ plotIsoformPie <- function(raw_data, gene, selected_isoforms = NULL, ncol = 4, m
         plot.title       = ggplot2::element_text(hjust = 0.5, face = "bold", size = 16,
                                                   color = "#2c3e50",
                                                   margin = ggplot2::margin(b = 16)),
-        strip.text       = ggplot2::element_text(size = 13, color = "#111111",
+        strip.text       = ggplot2::element_text(size = 11, color = "#444444",
                                                    face = "bold", family = "sans",
-                                                   margin = ggplot2::margin(b = 6, t = 12)),
+                                                   margin = ggplot2::margin(b = 4, t = 10)),
         strip.background = ggplot2::element_blank(),
         panel.spacing.x  = ggplot2::unit(2.2, "lines"),
         panel.spacing.y  = ggplot2::unit(1.6, "lines"),
