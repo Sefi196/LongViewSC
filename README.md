@@ -1,117 +1,175 @@
-<h1 style="text-align: center;">
+# LongViewSC
 
-LongViewSC: Interactive Visualization of Gene and Isoform Expression in Single-Cell Data
+**Interactive visualisation of gene and isoform expression in long-read single-cell data**
 
-</h1>
+Developed by the [Clark Laboratory](https://biomedicalsciences.unimelb.edu.au/sbs-research-groups/anatomy-and-physiology-research/stem-cell-and-developmental-biology/clark-lab), University of Melbourne
 
-<h1 style="text-align: center;">
+🌐 [Open App Online](https://longviewsc.researchsoftware.unimelb.edu.au/LongViewSC/) &nbsp;|&nbsp; 📖 [FLAMESv2 Data Prep Tutorial](https://sefi196.github.io/FLAMESv2_LR_sc_tutorial/)
 
-## Overview
+---
 
-</h2>
+## Workflow
 
-**LongViewSC** is an interactive Shiny app designed to visualize both gene and isoform expression in Long read single-cell data. This user-friendly tool is built to provide accessible and intuitive visualization for researchers, regardless of their coding experience and allow for intuitive exploration of your data. The application provides various visualization tools to help researchers easily compare gene and isoform expression across different conditions, clusters and cell types.
+| Step | Action |
+|------|--------|
+| **1. Load your data** | Upload a Seurat object (`.rds`, `.qs`, or `.qs2`) with gene and isoform expression data, or try the built-in demo dataset. |
+| **2. Configure** | Type a gene name in the sidebar. Select your isoform assay, dimensional reduction, and metadata grouping column. Optionally load a GTF for transcript structure. |
+| **3. Run Analysis** | Press **Run Analysis** to generate all plots. The top 4 isoforms are pre-selected — use the coloured chips in the sidebar to toggle isoforms across every tab. |
+| **4. Explore & export** | Navigate the tabs to explore cell-type maps, isoform statistics, expression plots, transcript structures, heatmaps, and proportions. Download individual plots or generate a full HTML report. |
 
-### What You Can Do
+---
 
--   **Visualize gene expression** using feature plots and violin plots.
--   **Explore isoform expression** at the single-cell level.
--   **Analyze transcript structure** View exon-intron structures of selected isoforms.
--   **Pseudobulk Heatmap**: Aggregate and visualize isoform expression across clusters or conditions.
--   **Dynamic Selection**: Choose specific isoforms or all isoforms of a gene for analysis.
+## Visualisation Tabs
 
-**If you find this application helpful, please cite our work: {PLACEHOLDER}.**
+### 1 — Overview
+A high-level view of your dataset: a UMAP coloured by your chosen grouping variable, a gene-level feature plot, and a violin plot comparing expression across groups.
 
-## How to Use the App
+- Select a **dimensional reduction** (e.g. UMAP, PCA) in the sidebar.
+- Choose a **metadata column** to colour cells by (cluster, cell type, condition).
+- Hit **Run Analysis** to generate all plots — the same button updates every tab.
 
-1.  **Upload Data**
-    -   Load a Seurat `.rds` file (required).
-    -   Upload a `.gtf` file for annotation (optional).
-2.  **Select Parameters**
-    -   Choose a gene to analyze.
-    -   Select a dimensional reduction method.
-    -   Specify the isoform assay. **Don't forget to do this!**
-    -   Define the metadata column to group cells.
-    -   Set the number of isoforms to display.
-3.  **Generate Plots**
-    -   Click **GO** to visualize selected features.
-4.  **Interpret Results**
-    -   Explore expression patterns and isoform structure
-5.  **Download your data**
-    -   (Under development)
+> **Quick start:** Click **Demo Data** on the landing page to load the built-in dataset, then press Run Analysis.
 
-## File Formats
+---
 
-### Input Files
+### 2 — Isoform Statistics
+A searchable, sortable table listing every isoform detected for your selected gene, with expression and detection statistics. Use this to identify the most relevant isoforms before diving into other plots.
 
--   A **Seurat Object (.rds)**: A Seurat object containing gene and isoform expression data, metadata, and dimensional reductions.
-    -   The Seurat object **must contain** a gene and isoform assay.
-    -   **Isoforms** must be labeled in the following format: `isoformID-geneID` (e.g., `ENST00000544301.7-VIM`).
--   **GTF File (.gtf)**: A gene annotation file.
+- Isoforms are named `ENST00000XXXXX.X-GENE` (e.g. `ENST00000224237.9-VIM`).
+- A tick (✓) marks isoforms currently selected in the sidebar chip panel.
+- Clicking a row also selects/deselects that isoform.
 
-📌 **Note:** If you are unsure about the format of your sample files, please refer to this comprehensive tutorial on generating these files from gene and count matrices: [FLAMESv2 Long-Read Single-Cell Tutorial](https://sefi196.github.io/FLAMESv2_LR_sc_tutorial/)
+> **Chip selector:** Coloured chips in the sidebar toggle which isoforms appear across the Expression, Heatmap, Proportions and Trajectory tabs.
 
-## Installation and Requirements
+---
 
-### **Option 1: Access LongViewSC online** (currently under development)
+### 3 — Isoform Expression
+Single-cell resolution plots for each selected isoform: a feature plot projected onto the isoform-level UMAP embedding and a violin plot across groups.
 
-<http://portal.unimelb-lrscview.cloud.edu.au:3838/LongViewSC/>
+- **Feature plots** use the isoform-level UMAP (`umap_iso`) if present, otherwise the gene-level UMAP.
+- **Violin plots** show expression per isoform, grouped by your chosen metadata column.
+- Only isoforms selected via the chip panel are shown.
 
-For optimal performance, we recommend that users upload files smaller than 200MB. For those who wish to explore larger files, please refer to **Option 2** for alternative installation options.
+> **Important:** Set the **Isoform Assay** field in the sidebar to the correct assay name (e.g. `iso`) before clicking Run Analysis.
 
-### **Option 2 : Local installation**
+---
 
-For users exploring large file \> 200MB or many files sequentially. In this case uploads may be slow and to overcome this, a local installation is recommended. The application has dependencies that we have provided as a conda environment file.
+### 4 — Transcript Structure
+Visualises the exon-intron architecture of each selected isoform from your uploaded GTF file, enabling direct structural comparison.
 
-1.  **Install conda or miniconda**
+- Exons are drawn as filled blocks; introns as directional arrows showing strand.
+- Upload a **.gtf** file in the sidebar — if omitted this tab is empty.
+- GTF transcript IDs must match the ENST IDs in your isoform assay.
 
-Installation of conda or miniconda will depend on your system. see <https://www.anaconda.com/docs/getting-started/miniconda/install> for details.
+> **Naming:** Isoforms must follow the format `ENST00000XXXXX.X-GENENAME` for automatic GTF matching.
 
-2.  **Clone this repo:**
+---
 
-``` bash
-git clone https://github.com/Sefi196/LongViewSC.git 
-cd LongViewSC
+### 5 — Pseudobulk Heatmap
+Aggregates isoform counts per group, normalises to log(CPM+1), and renders an interactive clustered heatmap — ideal for comparing relative isoform usage across conditions or cell types at a glance.
+
+- Rows are isoforms; columns are groups; colour intensity = log(CPM+1).
+- Rows are clustered by expression similarity.
+- The heatmap is fully interactive — hover for exact values, zoom, pan, and download via the camera icon.
+
+---
+
+### 6 — Isoform Proportions
+Faceted pie charts — one per group — showing each selected isoform as a proportion of total gene expression. Ideal for detecting isoform switching between cell types or conditions.
+
+- Selected isoforms are shown as distinct colours; all others are grouped as **Other isoforms** (grey).
+- Percentages are displayed for slices > 5%.
+- Set **Min counts** in the sidebar to hide groups with low coverage.
+
+> **Isoform switching:** Compare the dominant (largest) slice across groups — a shift in colour indicates a switch in the preferred isoform.
+
+---
+
+### 7 — Expression Trajectory
+Plots single-cell normalised isoform expression across an ordered sequence of groups (e.g. developmental stages), with a loess smooth overlaid per isoform panel.
+
+- **Drag and drop** the group labels in the sidebar to define the left-to-right ordering.
+- Each isoform gets its own panel with an independent y-axis.
+- A loess smooth with a shaded confidence ribbon highlights overall expression trends per isoform.
+
+> **Pairing tip:** Use Proportions to see *which* isoform dominates, and Trajectory to see *when* it changes along the axis.
+
+---
+
+### 8 — Compare Two Isoforms
+Directly compare the expression of any two isoforms (or genes) at single-cell resolution across three complementary views:
+
+- **Blend:** a UMAP blend — one isoform in red, the other in blue, co-expressing cells in purple. Works across genes or within a gene.
+- **Scatter:** each cell is a dot — X axis = isoform 1 expression, Y axis = isoform 2 expression. Includes a linear fit, R², and optional marginal distributions.
+- **Feature Map:** a categorical UMAP classifying every cell as **Both** (co-expressed), **Only X**, **Only Y**, or **Neither** — ideal for mutual-exclusivity analysis.
+
+> **Tip:** Use the **Show cells** filter to restrict comparisons to specific cell groups.
+
+---
+
+## Input Data Format
+
+### Seurat Object (`.rds` / `.qs` / `.qs2`)
+- Must contain a gene assay (e.g. `RNA`) and an isoform assay (e.g. `iso`).
+- Isoform IDs must follow `ENST00000XXXXX.X-GENENAME` — the gene suffix must match gene assay names (e.g. `ENST00000544301.7-VIM` ↔ `VIM`).
+- Requires at least one dimensional reduction (UMAP, PCA).
+- Metadata must include a column for cell grouping.
+
+See the [FLAMESv2 Tutorial](https://sefi196.github.io/FLAMESv2_LR_sc_tutorial/) for generating compatible objects.
+
+### GTF Annotation (`.gtf`) — Optional
+- Standard GTF format with a `transcript_id` attribute.
+- Transcript IDs must match the ENST IDs in your isoform assay.
+- Only required for the **Transcript Structure** tab.
+- Files up to 5 GB supported locally.
+
+### Performance Tips
+- **Online:** Keep uploads under 200 MB for best responsiveness.
+- **Local:** Use `qs::qsave()` format for large objects — up to 10x faster loading than `.rds`.
+- **qs / qs2:** Both formats are supported; the app auto-detects which library to use.
+
+---
+
+## Installation
+
+### Option 1 — Use Online
+Access LongViewSC directly in your browser — no setup required.
+
+```
+https://longviewsc.researchsoftware.unimelb.edu.au/LongViewSC/
 ```
 
-3.  **Create and laod the conda environment**
+Recommended for files < 200 MB.
 
-``` bash
+### Option 2 — Local Installation
+For large files (> 200 MB) or offline use. Requires conda or miniconda.
+
+```bash
+git clone https://github.com/Sefi196/LongViewSC.git
+cd LongViewSC
 conda env create -f environment.yml
 conda activate LongViewSC_env
 ```
 
-4.  **Install ggtranscript in R**
+Install ggtranscript (not on conda):
 
-``` r
-#open R
-R
-# Ensure devtools has been installed by runing 
-library("devtools")
-
-#If it has not been loaded install devtools
-install.packages("devtools")
-#install ggtranscript
-devtools::install_github("dzhang32/ggtranscript")
-
-# exit R
-q()
+```bash
+Rscript -e "devtools::install_github('dzhang32/ggtranscript')"
 ```
 
-5.  **Launch the app by running the following command in R:**
+Launch the app:
 
-``` r
-Rscript -e "shiny::runApp('<path_to_app.R>', launch.browser = TRUE)"
+```bash
+Rscript -e "shiny::runApp('app.R', launch.browser=TRUE)"
 ```
 
-This will launch the app in your default web browser.
+Runs entirely locally. No data is sent online.
 
-📌 **Note:** Although the app opens in your browser, it runs **entirely locally** on your machine. No internet connection is required, and no data is sent online.
+---
 
-## Contact and Support
+## Contact & Citation
 
-For further inquiries or support, please contact sefi.prawer\@unimelb.edu.au or leave a comment on the github page
+Developed by **Sefi Prawer** — Clark Laboratory, University of Melbourne.
+📧 [sefi.prawer@unimelb.edu.au](mailto:sefi.prawer@unimelb.edu.au)
 
-------------------------------------------------------------------------
-
-**Developed by Sefi Prawer in the Clark Laboratory, University of Melbourne**
+If you use LongViewSC please cite our work.
